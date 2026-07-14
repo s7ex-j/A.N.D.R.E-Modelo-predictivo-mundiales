@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A.N.D.R.E. · Mundial 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0d13;
+    --surface:#12161f;
+    --surface2:#171c28;
+    --line:#232a3a;
+    --line-soft:#1a2030;
+    --text:#e8ecf2;
+    --muted:#7c8798;
+    --muted2:#4f586b;
+    --green:#3ecf8e;
+    --green-dim:#1c3d31;
+    --red:#ff5c5c;
+    --red-dim:#3d1f22;
+    --amber:#e8b93e;
+    --amber-dim:#3a3320;
+    --blue:#5b8def;
+    --mono: 'IBM Plex Mono', monospace;
+    --disp: 'Space Grotesk', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--body);}
+  body{padding:24px;min-height:100vh;}
+  @media (max-width:640px){ body{padding:12px;} }
+
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  .topbar{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px;
+    flex-wrap:wrap;gap:12px;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand-mark{
+    font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:0.02em;
+    color:var(--bg);background:var(--green);padding:3px 8px;border-radius:3px;
+  }
+  .brand h1{font-family:var(--disp);font-size:22px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+  .brand .sub{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.04em;margin-top:2px;}
+  .live-indicator{
+    display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;
+    color:var(--muted);letter-spacing:0.05em;margin-left:14px;padding:3px 9px;
+    background:var(--surface2);border:1px solid var(--line);border-radius:10px;
+  }
+  .live-dot{
+    width:7px;height:7px;border-radius:50%;background:var(--red);
+    animation:pulse-dot 1.4s ease-in-out infinite;flex-shrink:0;
+  }
+  @keyframes pulse-dot{
+    0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,92,92,0.5);}
+    50%{opacity:0.5;box-shadow:0 0 0 4px rgba(255,92,92,0);}
+  }
+  #liveClock{color:var(--text);}
+  .headline-stats{display:flex;gap:22px;font-family:var(--mono);}
+  .hstat{text-align:right;}
+  .hstat .v{font-size:18px;font-weight:600;color:var(--text);}
+  .hstat .l{font-size:10px;color:var(--muted2);letter-spacing:0.06em;text-transform:uppercase;}
+
+  /* ---------- Panels ---------- */
+  .grid{display:grid;grid-template-columns:1.05fr 1.45fr;gap:16px;}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr;} }
+  .panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:18px;
+  }
+  .panel + .panel{margin-top:16px;}
+  .panel-title{
+    font-family:var(--mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 14px 0;display:flex;align-items:center;justify-content:space-between;
+  }
+
+  /* ---------- Match selector ---------- */
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+  .field label{font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--mono);}
+  select, input[type=text], input[type=number]{
+    background:var(--surface2);border:1px solid var(--line);color:var(--text);
+    padding:9px 10px;border-radius:5px;font-family:var(--mono);font-size:13px;width:100%;
+  }
+  select:disabled{color:var(--muted);opacity:0.75;}
+  select:focus, input:focus{outline:2px solid var(--blue);outline-offset:-1px;}
+  .team-row{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end;margin-bottom:2px;}
+  .vs{
+    font-family:var(--disp);color:var(--muted2);font-size:13px;font-weight:600;
+    padding-bottom:20px;
+  }
+  .elo-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+  .toggle-row label{font-size:12px;color:var(--muted);font-family:var(--body);}
+  .note{font-size:10.5px;color:var(--muted2);line-height:1.5;margin-top:8px;font-family:var(--body);}
+
+  .match-badge{
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;
+    background:var(--surface2);border:1px solid var(--line-soft);border-radius:6px;
+    padding:9px 11px;margin-bottom:14px;font-family:var(--body);font-size:12px;
+  }
+  .match-badge .mb-left{color:var(--muted);}
+  .status-chip{
+    font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:0.06em;
+    padding:3px 7px;border-radius:3px;text-transform:uppercase;
+  }
+  .status-confirmado{background:var(--blue);color:#0a0d13;}
+  .status-pordefinir{background:var(--amber-dim);color:var(--amber);}
+  .status-jugado{background:var(--surface);color:var(--muted);border:1px solid var(--line);}
+
+  /* ---------- xG panel ---------- */
+  .xg-block{display:flex;gap:16px;margin-bottom:6px;}
+  .xg-team{flex:1;}
+  .xg-team .name{font-family:var(--disp);font-size:14px;font-weight:600;margin-bottom:6px;}
+  .xg-num{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--text);}
+  .xg-range{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px;}
+  .xg-bar-track{height:6px;background:var(--surface2);border-radius:3px;margin-top:8px;overflow:hidden;position:relative;}
+  .xg-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),#82aef4);}
+
+  /* ---------- Prob bars 1x2 ---------- */
+  .prob-set{margin-top:16px;}
+  .prob-item{margin-bottom:10px;}
+  .prob-item .row1{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;font-family:var(--body);}
+  .prob-item .row1 b{font-family:var(--mono);}
+  .prob-track{height:9px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+  .prob-fill{height:100%;}
+  .fill-h{background:var(--green);}
+  .fill-d{background:var(--amber);}
+  .fill-a{background:var(--red);}
+
+  /* ---------- Edge meter (signature element) ---------- */
+  .edge-meter-wrap{display:flex;align-items:center;gap:18px;}
+  .edge-meter{position:relative;width:132px;height:132px;flex-shrink:0;}
+  .edge-meter svg{transform:rotate(-90deg);}
+  .edge-meter .center{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .edge-meter .center .num{font-family:var(--mono);font-size:22px;font-weight:700;}
+  .edge-meter .center .lbl{font-family:var(--mono);font-size:9px;color:var(--muted2);letter-spacing:0.08em;text-transform:uppercase;margin-top:2px;}
+  .edge-meter-info{flex:1;}
+  .edge-meter-info select{margin-bottom:8px;}
+  .pick-chip{
+    display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-weight:700;
+    font-size:12px;letter-spacing:0.06em;padding:5px 10px;border-radius:4px;
+  }
+  .pick-bet{background:var(--green-dim);color:var(--green);}
+  .pick-fade{background:var(--red-dim);color:var(--red);}
+  .pick-pass{background:var(--amber-dim);color:var(--amber);}
+
+  /* ---------- Odds table ---------- */
+  table.odds{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;}
+  table.odds th{
+    text-align:left;font-weight:500;color:var(--muted2);font-size:10px;letter-spacing:0.05em;
+    text-transform:uppercase;padding:0 8px 8px 8px;border-bottom:1px solid var(--line);
+  }
+  table.odds td{padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:middle;}
+  table.odds tr:last-child td{border-bottom:none;}
+  table.odds td.mkt{font-family:var(--body);font-size:12.5px;color:var(--text);font-weight:500;}
+  .odds-input-pair{display:flex;gap:4px;}
+  .odds-input-pair input{width:58px;padding:6px 6px;font-size:12px;text-align:center;}
+  .edge-val{font-weight:700;}
+  .edge-pos{color:var(--green);}
+  .edge-neg{color:var(--red);}
+  .fair{color:var(--blue);}
+
+  .legend{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-family:var(--body);}
+  .dot{width:8px;height:8px;border-radius:50%;}
+
+  /* ---------- Backtest panel ---------- */
+  .backtest-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+  @media (max-width:900px){ .backtest-grid{grid-template-columns:repeat(3,1fr);} }
+  .bt-cell{background:var(--surface2);border:1px solid var(--line-soft);border-radius:6px;padding:10px;text-align:center;}
+  .bt-cell.hi{border-color:var(--green);background:var(--green-dim);}
+  .bt-cell .m{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;}
+  .bt-cell .a{font-family:var(--mono);font-size:17px;font-weight:700;margin-top:4px;}
+  .bt-cell .a.hi{color:var(--green);}
+  .bt-cell .n{font-size:9px;color:var(--muted2);margin-top:3px;font-family:var(--mono);}
+
+  .footnote{
+    font-size:11px;color:var(--muted2);margin-top:20px;line-height:1.7;font-family:var(--body);
+    border-top:1px solid var(--line);padding-top:14px;
+  }
+  .footnote b{color:var(--muted);}
+  .credit{
+    margin-top:14px;padding-top:14px;border-top:1px solid var(--line);
+    font-size:12px;color:var(--muted);font-family:var(--body);
+  }
+  .credit b{color:var(--text);}
+  .credit .handle{color:var(--blue);font-family:var(--mono);}
+
+  /* ---------- Score heatmap ---------- */
+  .heatmap-grid{display:inline-grid;gap:3px;margin-top:6px;}
+  .hm-cell{
+    width:38px;height:32px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:10px;border-radius:3px;color:var(--text);
+    position:relative;
+  }
+  .hm-label{
+    width:38px;height:32px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:10px;color:var(--muted2);
+  }
+  .hm-best{box-shadow:0 0 0 2px var(--green) inset;font-weight:700;}
+  .hm-axis-label{font-family:var(--mono);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.05em;}
+  .top-score-chip{
+    display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-weight:700;
+    font-size:12px;padding:5px 10px;border-radius:4px;background:var(--green-dim);color:var(--green);
+    margin-top:10px;
+  }
+
+  /* ---------- Analytics section (full width, below main grid) ---------- */
+  .analytics-header{
+    display:flex;align-items:baseline;gap:10px;margin:28px 0 14px 0;
+    padding-top:4px;
+  }
+  .analytics-title{font-family:var(--disp);font-size:15px;font-weight:700;color:var(--text);}
+  .analytics-sub{font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:0.03em;}
+  .analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:900px){ .analytics-grid{grid-template-columns:1fr;} }
+  .chart-box{position:relative;height:230px;width:100%;}
+
+  /* ---------- Elo ranking mini widget ---------- */
+  .elo-rank-row{
+    display:flex;align-items:center;gap:10px;padding:6px 0;
+    border-bottom:1px solid var(--line-soft);font-family:var(--body);font-size:12.5px;
+  }
+  .elo-rank-row:last-child{border-bottom:none;}
+  .elo-rank-num{
+    font-family:var(--mono);font-size:10px;color:var(--muted2);width:16px;flex-shrink:0;
+  }
+  .elo-rank-name{flex:1;color:var(--text);}
+  .elo-rank-bar-track{width:70px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;flex-shrink:0;}
+  .elo-rank-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));}
+  .elo-rank-val{font-family:var(--mono);font-size:11px;color:var(--muted);width:44px;text-align:right;flex-shrink:0;}
+
+  /* ---------- Device preview toggle ---------- */
+  .device-toggle{
+    display:flex;align-items:center;gap:4px;background:var(--surface2);
+    border:1px solid var(--line);border-radius:6px;padding:3px;
+  }
+  .device-btn{
+    font-family:var(--mono);font-size:11px;padding:6px 11px;border-radius:4px;
+    background:transparent;border:none;color:var(--muted);cursor:pointer;
+    display:flex;align-items:center;gap:5px;transition:background 0.15s,color 0.15s;
+  }
+  .device-btn.active{background:var(--surface);color:var(--text);}
+  .device-btn:hover{color:var(--text);}
+
+  /* El preview móvil usa un IFRAME real con su propio viewport de 390px,
+     así los @media queries de arriba se activan de verdad (no se puede
+     simular esto solo con CSS en el documento padre -- @media responde
+     al ancho de la ventana, no al de un contenedor). */
+  #mobilePreviewOverlay{
+    display:none;position:fixed;inset:0;background:#05070a;z-index:999;
+    flex-direction:column;align-items:center;justify-content:flex-start;
+    padding:30px 0;overflow-y:auto;
+  }
+  #mobilePreviewOverlay.active{display:flex;}
+  .phone-frame{
+    width:390px;height:800px;border-radius:32px;border:2px solid var(--line);
+    box-shadow:0 0 0 6px #000, 0 20px 60px rgba(0,0,0,0.7);overflow:hidden;
+    background:var(--bg);flex-shrink:0;
+  }
+  .phone-frame iframe{width:100%;height:100%;border:none;}
+  .phone-close{
+    font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--surface2);
+    border:1px solid var(--line);border-radius:6px;padding:8px 14px;margin-bottom:14px;cursor:pointer;
+  }
+  .phone-close:hover{color:var(--text);}
+
+  .live-refresh-row{
+    display:flex;align-items:center;gap:6px;margin-top:8px;
+    font-family:var(--mono);font-size:10px;color:var(--muted2);
+  }
+  @keyframes flash-update{
+    0%{background:rgba(91,141,239,0.35);}
+    100%{background:transparent;}
+  }
+  .flash-update{animation:flash-update 1s ease-out;}
+
+  /* ---------- Live odds list ---------- */
+  .live-odds-row{
+    background:var(--surface2);border:1px solid var(--line-soft);border-radius:6px;
+    padding:8px 10px;margin-bottom:6px;font-family:var(--body);font-size:11.5px;
+  }
+  .live-odds-row .teams{color:var(--text);font-weight:500;margin-bottom:3px;}
+  .live-odds-row .prices{font-family:var(--mono);color:var(--muted);font-size:10.5px;display:flex;gap:10px;flex-wrap:wrap;}
+  .live-odds-row .use-btn{
+    margin-top:6px;font-family:var(--mono);font-size:10px;background:var(--green-dim);color:var(--green);
+    border:none;border-radius:4px;padding:4px 8px;cursor:pointer;
+  }
+  .live-odds-row .use-btn:hover{background:var(--green);color:#0a0d13;}
+
+  /* ---------- Chart containers ---------- */
+  canvas{max-width:100%;}
+
+  ::-webkit-scrollbar{height:6px;width:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-mark">26</span>
+      <div>
+        <h1>A.N.D.R.E.</h1>
+        <div class="sub">ADAPTIVE NEURAL DIXON-COLES REGULARIZED ENSEMBLE &middot; MUNDIAL 2026</div>
+      </div>
+      <div class="live-indicator" id="liveIndicator">
+        <span class="live-dot"></span>LIVE <span id="liveClock">00:00:00</span>
+      </div>
+    </div>
+    <div class="headline-stats">
+      <div class="hstat"><div class="v" style="color:var(--green)">62.0%</div><div class="l">Accuracy stack (holdout)</div></div>
+      <div class="hstat"><div class="v">0.160</div><div class="l">RPS stack</div></div>
+      <div class="hstat"><div class="v">1,106</div><div class="l">Partidos out-of-sample</div></div>
+      <div class="device-toggle">
+        <button class="device-btn active" id="btnMobile" title="Vista m&oacute;vil">&#128241; Ver en m&oacute;vil</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT COLUMN -->
+    <div>
+      <div class="panel">
+        <p class="panel-title">Partido</p>
+
+        <div class="field">
+          <label>Fase</label>
+          <select id="faseSel">
+            <option value="octJugados">Octavos de Final — ya jugados</option>
+            <option value="cuartos" selected>Cuartos de Final</option>
+            <option value="semis">Semifinales</option>
+            <option value="tercer">Tercer puesto</option>
+            <option value="final">Final</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Cruce</label>
+          <select id="cruceSel"></select>
+        </div>
+
+        <div class="team-row">
+          <div class="field" style="margin-bottom:0;">
+            <label id="homeLabel">Equipo 1</label>
+            <select id="homeTeam"></select>
+          </div>
+          <div class="vs">vs</div>
+          <div class="field" style="margin-bottom:0;">
+            <label id="awayLabel">Equipo 2</label>
+            <select id="awayTeam"></select>
+          </div>
+        </div>
+
+        <div class="match-badge" style="margin-top:12px;">
+          <span class="mb-left" id="matchVenueTxt">—</span>
+          <span class="status-chip" id="matchStatusChip">—</span>
+        </div>
+
+        <div class="elo-row">
+          <div class="field" style="margin-bottom:0;">
+            <label>Elo Equipo 1 (pre-partido)</label>
+            <input type="number" id="eloHome" value="1900">
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Elo Equipo 2 (pre-partido)</label>
+            <input type="number" id="eloAway" value="1900">
+          </div>
+        </div>
+        <div class="toggle-row" style="margin-top:10px;">
+          <input type="checkbox" id="neutral" checked>
+          <label for="neutral">Cancha neutral (todo el Mundial 2026 se juega en sede neutral salvo México/Canadá/USA como locales de grupo)</label>
+        </div>
+        <div class="elo-row" style="margin-top:10px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>&rho; Dixon-Coles (correl. marcador bajo)</label>
+            <input type="number" id="rho" value="-0.08" step="0.01">
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Importancia del partido</label>
+            <select id="importance">
+              <option value="1.00" selected>Mundial &mdash; fase de eliminaci&oacute;n (1.00)</option>
+              <option value="0.85">Copa continental (0.85)</option>
+              <option value="0.60">Repechaje / Eliminatoria (0.60)</option>
+              <option value="0.65">Nations League (0.65)</option>
+              <option value="0.30">Amistoso (0.30)</option>
+            </select>
+          </div>
+        </div>
+        <div class="note">
+          Elo son valores de referencia aproximados de inicios de julio 2026, editables. Para el valor exacto y actualizado de cada selecci&oacute;n, verifica en eloratings.net. Los cruces marcados "por definir" son escenarios hipot&eacute;ticos: elige cualquier combinaci&oacute;n posible de equipos seg&uacute;n el bracket real.
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">xG modelo (Dixon-Coles)</p>
+        <div class="xg-block">
+          <div class="xg-team">
+            <div class="name" id="xgHomeName">Equipo 1</div>
+            <div class="xg-num" id="xgHomeVal">1.35</div>
+            <div class="xg-range" id="xgHomeRange">rango 0.95 &ndash; 1.85</div>
+            <div class="xg-bar-track"><div class="xg-bar-fill" id="xgHomeBar" style="width:50%"></div></div>
+          </div>
+          <div class="xg-team">
+            <div class="name" id="xgAwayName">Equipo 2</div>
+            <div class="xg-num" id="xgAwayVal">1.10</div>
+            <div class="xg-range" id="xgAwayRange">rango 0.75 &ndash; 1.55</div>
+            <div class="xg-bar-track"><div class="xg-bar-fill" id="xgAwayBar" style="width:40%"></div></div>
+          </div>
+        </div>
+
+        <div class="prob-set">
+          <div class="prob-item">
+            <div class="row1"><span>Gana Equipo 1</span><b id="pHomeTxt">0%</b></div>
+            <div class="prob-track"><div class="prob-fill fill-h" id="pHomeBar" style="width:0%"></div></div>
+          </div>
+          <div class="prob-item">
+            <div class="row1"><span>Empate</span><b id="pDrawTxt">0%</b></div>
+            <div class="prob-track"><div class="prob-fill fill-d" id="pDrawBar" style="width:0%"></div></div>
+          </div>
+          <div class="prob-item">
+            <div class="row1"><span>Gana Equipo 2</span><b id="pAwayTxt">0%</b></div>
+            <div class="prob-track"><div class="prob-fill fill-a" id="pAwayBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Mapa de marcadores probables (solo Dixon-Coles)</p>
+        <div id="scoreHeatmapWrap"></div>
+        <div class="note" id="scoreTopNote">Calculado en vivo a partir de &lambda;local / &lambda;visita.</div>
+        <div class="note" style="margin-top:6px;color:var(--amber);">&#9888; Este mapa usa <b>solo Dixon-Coles</b>, no el stacking completo. El % de "Gana Equipo 1/Empate/Gana Equipo 2" de arriba SÍ combina los 4 modelos (Dixon-Coles + XGBoost + red neuronal + Bayes) y puede diferir bastante del que implica este mapa, sobre todo cuando el Elo y el Dixon-Coles interno no están de acuerdo sobre un equipo. No es un error — son dos señales distintas del mismo partido.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+      <div class="panel">
+        <p class="panel-title">Fuente del modelo</p>
+        <div class="toggle-row" style="margin-bottom:10px;">
+          <input type="checkbox" id="useApi">
+          <label for="useApi">Usar mi API en vivo (modelos entrenados reales) en vez de la heurística Elo→Poisson</label>
+        </div>
+        <div class="field" id="apiUrlField" style="display:none;margin-bottom:6px;">
+          <label>URL base de tu API (plumber)</label>
+          <input type="text" id="apiUrl" placeholder="https://tu-api.onrender.com" value="http://127.0.0.1:8000">
+        </div>
+        <div class="note" id="apiStatusTxt" style="display:none;"></div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Cuotas de mercado en vivo</p>
+        <div class="field">
+          <label>API key (The Odds API &mdash; the-odds-api.com, tier gratis)</label>
+          <input type="text" id="oddsApiKey" placeholder="pega tu API key aquí">
+        </div>
+        <div class="elo-row" style="margin-top:8px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>Regi&oacute;n de casas</label>
+            <select id="oddsRegion">
+              <option value="eu" selected>Europa (Bet365, Unibet...)</option>
+              <option value="uk">Reino Unido</option>
+              <option value="us">Estados Unidos</option>
+              <option value="au">Australia</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Auto-actualizar</label>
+            <select id="oddsAutoRefresh">
+              <option value="0">Manual</option>
+              <option value="60">Cada 60s (gasta rápido tu cuota gratis)</option>
+              <option value="300" selected>Cada 5 min (recomendado)</option>
+              <option value="900">Cada 15 min</option>
+            </select>
+          </div>
+        </div>
+        <button id="btnFetchOdds" style="margin-top:10px;width:100%;background:var(--blue);color:#0a0d13;border:none;padding:10px;border-radius:5px;font-family:var(--mono);font-weight:700;font-size:12px;cursor:pointer;">ACTUALIZAR CUOTAS AHORA</button>
+        <div class="live-refresh-row">
+          <span class="live-dot" id="oddsLiveDot" style="display:none;"></span>
+          <span id="oddsCountdown"></span>
+        </div>
+        <div class="note" style="color:var(--amber);margin-top:4px;">&#9888; Cada actualización gasta 1 petición de tu cuota mensual gratis (revisa el l&iacute;mite vigente en the-odds-api.com). "Cada 60s" corriendo todo el d&iacute;a agota un tier gratis t&iacute;pico en pocas horas -- "Cada 5 min" es un balance razonable.</div>
+        <div class="note" id="oddsApiStatus" style="margin-top:4px;">Sin conectar todav&iacute;a. Consigue una API key gratis en <span style="color:var(--blue)">the-odds-api.com</span>.</div>
+        <div id="liveOddsListWrap" style="margin-top:10px;max-height:220px;overflow-y:auto;"></div>
+        <div class="chart-box" style="height:150px;margin-top:12px;display:none;" id="oddsHistoryBox">
+          <canvas id="chartOddsHistory"></canvas>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Edge Meter</p>
+        <div class="edge-meter-wrap">
+          <div class="edge-meter">
+            <svg width="132" height="132" viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="56" fill="none" stroke="#1a2030" stroke-width="10"/>
+              <circle id="edgeArc" cx="66" cy="66" r="56" fill="none" stroke="#3ecf8e" stroke-width="10"
+                stroke-dasharray="351.86" stroke-dashoffset="351.86" stroke-linecap="round"/>
+            </svg>
+            <div class="center">
+              <div class="num" id="edgeMeterNum">0%</div>
+              <div class="lbl">Edge</div>
+            </div>
+          </div>
+          <div class="edge-meter-info">
+            <label style="font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--mono);">Mercado destacado</label>
+            <select id="featuredMarket" style="margin-top:6px;margin-bottom:10px;">
+              <option value="home">1X2 &mdash; Gana Equipo 1</option>
+              <option value="draw">1X2 &mdash; Empate</option>
+              <option value="away">1X2 &mdash; Gana Equipo 2</option>
+              <option value="over25">Over 2.5 goles</option>
+              <option value="under25">Under 2.5 goles</option>
+              <option value="bttsYes">Ambos anotan &mdash; S&iacute;</option>
+              <option value="bttsNo">Ambos anotan &mdash; No</option>
+            </select>
+            <div id="pickChip" class="pick-chip pick-pass">PASS</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">Cuotas vs. Modelo &middot; todos los mercados</p>
+        <div style="overflow-x:auto;">
+        <table class="odds">
+          <thead>
+            <tr>
+              <th>Mercado</th>
+              <th>Cuota (dec)</th>
+              <th>Cuota (US)</th>
+              <th>% Modelo</th>
+              <th>% Mercado</th>
+              <th>%EDGE</th>
+              <th>Cuota justa</th>
+              <th>Pick</th>
+            </tr>
+          </thead>
+          <tbody id="oddsBody"><!-- filled by JS --></tbody>
+        </table>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="dot" style="background:var(--green)"></div>BET &mdash; edge &ge; 3%, el modelo ve más valor que el mercado</div>
+          <div class="legend-item"><div class="dot" style="background:var(--red)"></div>FADE &mdash; el mercado sobrevalora este resultado &ge;3%</div>
+          <div class="legend-item"><div class="dot" style="background:var(--amber)"></div>PASS &mdash; sin edge relevante</div>
+        </div>
+        <div class="note">"% Mercado" ya está des-vigueado (removido el margen de la casa) dentro de cada grupo de mercado (1X2 / O-U 2.5 / BTTS) para que la comparación de probabilidad sea justa. Ingresa cualquiera de las dos cuotas (decimal o americana); la otra se calcula sola.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="analytics-header">
+    <span class="analytics-title">Anal&iacute;ticas del modelo</span>
+    <span class="analytics-sub">datos reales de tu backtest &middot; no se recalculan por partido</span>
+  </div>
+
+  <div class="analytics-grid">
+    <div class="panel">
+      <p class="panel-title">Backtest del ensamble (2023&ndash;2026, walk-forward)</p>
+      <div class="backtest-grid">
+        <div class="bt-cell"><div class="m">Naive</div><div class="a">47.3%</div><div class="n">RPS .229</div></div>
+        <div class="bt-cell"><div class="m">Dixon-C.</div><div class="a">56.3%</div><div class="n">RPS .190</div></div>
+        <div class="bt-cell"><div class="m">Red neur.</div><div class="a">59.3%</div><div class="n">RPS .170</div></div>
+        <div class="bt-cell"><div class="m">XGBoost</div><div class="a">60.0%</div><div class="n">RPS .168</div></div>
+        <div class="bt-cell"><div class="m">Promedio</div><div class="a">60.0%</div><div class="n">RPS .175</div></div>
+        <div class="bt-cell hi"><div class="m">Stacking</div><div class="a hi">62.0%</div><div class="n">RPS .160</div></div>
+      </div>
+      <div class="note">Métricas reales de <span style="color:var(--muted)">09_evaluation.R</span>. Stacking medido en el 30% final del test (holdout real), n=1,106. Bootstrap (5,000 remuestreos): stacking le gana al promedio simple de forma <b style="color:var(--green)">estad&iacute;sticamente significativa</b>; contra XGBoost/red neuronal solos, todav&iacute;a no es concluyente con esta cantidad de partidos.</div>
+    </div>
+
+    <div class="panel">
+      <p class="panel-title">Top Elo actual <span style="font-weight:400;color:var(--muted2);text-transform:none;">(en vivo, desde los datos cargados)</span></p>
+      <div id="eloRankingWrap"></div>
+    </div>
+
+    <div class="panel">
+      <p class="panel-title">Backtest del ensamble &mdash; accuracy real</p>
+      <div class="chart-box"><canvas id="chartAccuracy"></canvas></div>
+      <div class="legend" style="margin-top:10px;">
+        <div class="legend-item"><div class="dot" style="background:#5b8def"></div>Todos los torneos (n=3,686)</div>
+        <div class="legend-item"><div class="dot" style="background:#3ecf8e"></div>Solo Mundial 2026 (n=88)</div>
+      </div>
+      <div class="note">Datos reales de <span style="color:var(--muted)">09_evaluation.R</span> y <span style="color:var(--muted)">09b_evaluation_worldcup.R</span> sobre tu dataset completo (1872&ndash;2026, 49,493 partidos) con XGBoost y bayesiano incluidos.</div>
+    </div>
+
+    <div class="panel">
+      <p class="panel-title">Calibraci&oacute;n del stacking</p>
+      <div class="chart-box"><canvas id="chartCalibration"></canvas></div>
+      <div class="note">Agrupa partidos por probabilidad predicha de "gana local" (10 grupos, test completo) vs. frecuencia real. L&iacute;nea punteada = calibraci&oacute;n perfecta. Stacking es el <b style="color:var(--green)">mejor calibrado</b> de los 5 modelos (brecha 0.022 vs. 0.086 del promedio simple) &mdash; por eso el %EDGE es confiable.</div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <b>Metodología:</b> Elo (ventaja local +60, K din&aacute;mico por importancia, estilo eloratings.net) &rarr; Dixon-Coles Poisson bivariado con decaimiento temporal y refit trimestral walk-forward &rarr; features de forma reciente, descanso y head-to-head &rarr; XGBoost (clasificaci&oacute;n 1X2 + regresi&oacute;n Poisson de goles) + red neuronal + bayesiano jer&aacute;rquico MCMC &rarr; meta-learner (regresi&oacute;n multinomial glmnet) sobre las probabilidades de los modelos base. Todo el pipeline es walk-forward (nunca usa informaci&oacute;n futura). Entrenado y evaluado sobre el dataset internacional de resultados 1872&ndash;2026 (49,501 partidos).<br>
+    El bracket (cuartos, semis, final) refleja la estructura real del Mundial 2026 conocida al 6&ndash;7 de julio de 2026: octavos de Marruecos, Francia, Noruega e Inglaterra ya definidos; Espa&ntilde;a/Portugal, B&eacute;lgica/USA, Egipto/Argentina y Suiza/Colombia todav&iacute;a por resolverse. Los cruces "por definir" son escenarios hipot&eacute;ticos v&aacute;lidos seg&uacute;n el bracket, no predicciones de qui&eacute;n avanzar&aacute;.<br>
+    Esta herramienta es un simulador informativo para explorar tu propio modelo frente a cuotas de mercado. No es asesor&iacute;a financiera ni garant&iacute;a de resultados; el f&uacute;tbol tiene varianza alta incluso con buena calibraci&oacute;n. Apostar conlleva riesgo real de p&eacute;rdida.
+    <div class="credit">
+      <b>Información</b><br>
+      Esto lo creó Andre. Contacto: <span class="handle">@s7ex.j</span>
+    </div>
+  </div>
+
+</div>
+
+<div id="mobilePreviewOverlay">
+  <button class="phone-close" id="btnClosePhone">&larr; Cerrar vista m&oacute;vil</button>
+  <div class="phone-frame">
+    <iframe id="phoneIframe"></iframe>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------
+// Elo presets — approximate, early July 2026 (editable in UI)
+// ---------------------------------------------------------------
+const ELO = {
+  "Spain":2159, "Argentina":2151, "France":2134, "England":2046, "Brazil":2031,
+  "Portugal":2013, "Colombia":2004, "Netherlands":1971, "Mexico":1943, "Switzerland":1943,
+  "Norway":1934, "Morocco":1921, "Germany":1918, "Belgium":1905, "Croatia":1895,
+  "Uruguay":1889, "Italy":1885, "United States":1872, "Japan":1855, "Senegal":1840,
+  "Denmark":1832, "Ecuador":1825, "Austria":1818, "Ukraine":1805, "South Korea":1798,
+  "Ghana":1780, "Australia":1772, "Egypt":1768, "Iran":1760, "Saudi Arabia":1735,
+  "Tunisia":1730, "Canada":1725, "Panama":1705, "Paraguay":1700, "Ivory Coast":1698,
+  "Poland":1690, "Algeria":1685, "Qatar":1660, "South Africa":1650, "Jordan":1630,
+  "Nigeria":1620, "New Zealand":1560, "Uzbekistan":1585, "Cape Verde":1600,
+  "Haiti":1540, "Curacao":1555, "Scotland":1770, "Wales":1690, "Bosnia and Herzegovina":1715,
+  "Czechia":1690
+};
+
+// ---------------------------------------------------------------
+// Bracket real del Mundial 2026 (conocido al 6-7 julio 2026)
+// ---------------------------------------------------------------
+const OCT_JUGADOS = [
+  {home:"Morocco", away:"Canada", score:"3-0", venue:"Houston Stadium", date:"4 jul"},
+  {home:"France", away:"Paraguay", score:"1-0", venue:"Philadelphia Stadium", date:"4 jul"},
+  {home:"Norway", away:"Brazil", score:"2-1", venue:"MetLife Stadium (East Rutherford)", date:"5 jul"},
+  {home:"England", away:"Mexico", score:"3-2", venue:"Estadio Azteca (Ciudad de México)", date:"5 jul"},
+  {home:"Spain", away:"Portugal", score:"1-0", venue:"AT&T Stadium (Arlington)", date:"6 jul"},
+  {home:"Belgium", away:"USA", score:"4-1", venue:"Lumen Field (Seattle)", date:"6 jul"},
+  {home:"Argentina", away:"Egypt", score:"3-2", venue:"Mercedes-Benz Stadium (Atlanta)", date:"7 jul"},
+  {home:"Switzerland", away:"Colombia", score:"0-0 (pens 4-3)", venue:"BC Place (Vancouver)", date:"7 jul"}
+];
+
+const CUARTOS = [
+  {label:"Boston — Jugado: Francia 2-0 Marruecos", fixed:true, played:true, score:"2-0",
+    home:"France", away:"Morocco", venue:"Gillette Stadium (Boston)", date:"9 jul"},
+  {label:"Los Ángeles — Jugado: España 2-1 Bélgica", fixed:true, played:true, score:"2-1",
+    home:"Spain", away:"Belgium", venue:"SoFi Stadium (Los Ángeles)", date:"10 jul"},
+  {label:"Miami — Noruega vs Inglaterra (por jugar)", fixed:true, played:false,
+    home:"Norway", away:"England", venue:"Hard Rock Stadium (Miami)", date:"11 jul"},
+  {label:"Kansas City — Argentina vs Suiza (por jugar)", fixed:true, played:false,
+    home:"Argentina", away:"Switzerland", venue:"Arrowhead Stadium (Kansas City)", date:"11 jul"}
+];
+
+const SEMIS = [
+  {label:"Dallas — Francia vs España (confirmado)", fixed:true, played:false,
+    home:"France", away:"Spain", venue:"AT&T Stadium (Dallas)", date:"14 jul"},
+  {label:"Atlanta — Ganador Miami vs Ganador Kansas City", fixed:false,
+    homeOptions:["Norway","England"], awayOptions:["Argentina","Switzerland"],
+    venue:"Mercedes-Benz Stadium (Atlanta)", date:"15 jul"}
+];
+
+const TERCER = {
+  homeOptions:["France","Spain"],
+  awayOptions:["Norway","England","Argentina","Switzerland"],
+  venue:"Hard Rock Stadium (Miami)", date:"18 jul"
+};
+
+const FINAL = {
+  homeOptions:["France","Spain"],
+  awayOptions:["Norway","England","Argentina","Switzerland"],
+  venue:"MetLife Stadium (East Rutherford)", date:"19 jul"
+};
+
+const faseSel = document.getElementById('faseSel');
+const cruceSel = document.getElementById('cruceSel');
+const homeSel = document.getElementById('homeTeam');
+const awaySel = document.getElementById('awayTeam');
+const eloHomeInput = document.getElementById('eloHome');
+const eloAwayInput = document.getElementById('eloAway');
+const homeLabel = document.getElementById('homeLabel');
+const awayLabel = document.getElementById('awayLabel');
+const matchVenueTxt = document.getElementById('matchVenueTxt');
+const matchStatusChip = document.getElementById('matchStatusChip');
+
+function fillSelect(sel, options){
+  sel.innerHTML = '';
+  options.forEach(o => sel.add(new Option(o, o)));
+  sel.disabled = options.length <= 1;
+}
+
+function populateCruce(){
+  const fase = faseSel.value;
+  cruceSel.innerHTML = '';
+  let list = [];
+  if (fase === 'octJugados') list = OCT_JUGADOS.map((m,i)=>`${m.home} ${m.score} ${m.away} — ${m.venue}`);
+  else if (fase === 'cuartos') list = CUARTOS.map(m=>m.label);
+  else if (fase === 'semis') list = SEMIS.map(m=>m.label);
+  else if (fase === 'tercer') list = ["Tercer puesto — Perdedores de semifinales"];
+  else if (fase === 'final') list = ["Final — Ganadores de semifinales"];
+  list.forEach((txt,i)=> cruceSel.add(new Option(txt, i)));
+  onCruceChange();
+}
+
+function onCruceChange(){
+  const fase = faseSel.value;
+  const idx = parseInt(cruceSel.value || 0);
+  let entry, statusClass, statusTxt;
+
+  if (fase === 'octJugados'){
+    entry = OCT_JUGADOS[idx];
+    fillSelect(homeSel, [entry.home]); fillSelect(awaySel, [entry.away]);
+    homeLabel.textContent = 'Equipo 1'; awayLabel.textContent = 'Equipo 2';
+    statusClass = 'status-jugado'; statusTxt = `JUGADO · ${entry.score}`;
+  } else if (fase === 'cuartos'){
+    entry = CUARTOS[idx];
+    if (entry.fixed){
+      fillSelect(homeSel, [entry.home]); fillSelect(awaySel, [entry.away]);
+      homeLabel.textContent = 'Equipo 1'; awayLabel.textContent = 'Equipo 2';
+      if (entry.played){ statusClass = 'status-jugado'; statusTxt = 'JUGADO · ' + entry.score; }
+      else { statusClass = 'status-confirmado'; statusTxt = 'CONFIRMADO'; }
+    } else {
+      fillSelect(homeSel, entry.homeOptions); fillSelect(awaySel, entry.awayOptions);
+      homeLabel.textContent = 'Equipo (lado 1)'; awayLabel.textContent = 'Equipo (lado 2)';
+      statusClass = 'status-pordefinir'; statusTxt = 'POR DEFINIR · escenario';
+    }
+  } else if (fase === 'semis'){
+    entry = SEMIS[idx];
+    if (entry.fixed){
+      fillSelect(homeSel, [entry.home]); fillSelect(awaySel, [entry.away]);
+      homeLabel.textContent = 'Equipo 1'; awayLabel.textContent = 'Equipo 2';
+      statusClass = 'status-confirmado'; statusTxt = 'CONFIRMADO';
+    } else {
+      fillSelect(homeSel, entry.homeOptions); fillSelect(awaySel, entry.awayOptions);
+      homeLabel.textContent = 'Equipo (lado 1)'; awayLabel.textContent = 'Equipo (lado 2)';
+      statusClass = 'status-pordefinir'; statusTxt = 'POR DEFINIR · escenario';
+    }
+  } else if (fase === 'tercer'){
+    entry = TERCER;
+    fillSelect(homeSel, entry.homeOptions); fillSelect(awaySel, entry.awayOptions);
+    homeLabel.textContent = 'Equipo (lado 1)'; awayLabel.textContent = 'Equipo (lado 2)';
+    statusClass = 'status-pordefinir'; statusTxt = 'POR DEFINIR · escenario';
+  } else {
+    entry = FINAL;
+    fillSelect(homeSel, entry.homeOptions); fillSelect(awaySel, entry.awayOptions);
+    homeLabel.textContent = 'Equipo (lado 1)'; awayLabel.textContent = 'Equipo (lado 2)';
+    statusClass = 'status-pordefinir'; statusTxt = 'POR DEFINIR · escenario';
+  }
+
+  matchVenueTxt.textContent = `${entry.venue} · ${entry.date}`;
+  matchStatusChip.textContent = statusTxt;
+  matchStatusChip.className = 'status-chip ' + statusClass;
+
+  syncEloFromTeam(homeSel, eloHomeInput);
+  syncEloFromTeam(awaySel, eloAwayInput);
+  recalcAll();
+}
+
+function syncEloFromTeam(select, input){
+  const team = select.value;
+  input.value = ELO[team] || 1500;
+}
+
+faseSel.addEventListener('change', populateCruce);
+cruceSel.addEventListener('change', onCruceChange);
+homeSel.addEventListener('change', ()=>{ syncEloFromTeam(homeSel, eloHomeInput); recalcAll(); });
+awaySel.addEventListener('change', ()=>{ syncEloFromTeam(awaySel, eloAwayInput); recalcAll(); });
+
+// ---------------------------------------------------------------
+// Elo -> lambda (expected goals) heuristic, consistent in spirit
+// with the Elo + Dixon-Coles stages of the pipeline
+// ---------------------------------------------------------------
+function estimateLambdas(eloHome, eloAway, neutral, importance){
+  const AVG_GOALS = 1.35; // media histórica de goles por equipo, dataset 1872-2026
+  const HOME_ADV = neutral ? 0 : 60;
+  const diff = (eloHome + HOME_ADV) - eloAway;
+  const ratio = Math.pow(10, diff / 800);
+  let lh = AVG_GOALS * Math.sqrt(ratio);
+  let la = AVG_GOALS / Math.sqrt(ratio);
+  const shrink = 0.85 + 0.15 * importance;
+  lh = AVG_GOALS + (lh - AVG_GOALS) * shrink;
+  la = AVG_GOALS + (la - AVG_GOALS) * shrink;
+  return [Math.max(0.25, Math.min(4, lh)), Math.max(0.25, Math.min(4, la))];
+}
+
+function poissonPMF(k, lambda){
+  let logp = -lambda + k*Math.log(lambda) - lgamma(k+1);
+  return Math.exp(logp);
+}
+function lgamma(x){
+  if (x <= 1) return 0;
+  let n = Math.round(x) - 1;
+  let s = 0;
+  for(let i=2;i<=n;i++) s += Math.log(i);
+  return s;
+}
+
+function tau(x, y, l1, l2, rho){
+  if (x===0 && y===0) return 1 - l1*l2*rho;
+  if (x===0 && y===1) return 1 + l1*rho;
+  if (x===1 && y===0) return 1 + l2*rho;
+  if (x===1 && y===1) return 1 - rho;
+  return 1;
+}
+
+function dcProbs(lh, la, rho, maxGoals){
+  maxGoals = maxGoals || 9;
+  let pHome=0, pDraw=0, pAway=0, pOver25=0, pUnder25=0, pBttsYes=0, pBttsNo=0, tot=0;
+  for(let x=0;x<=maxGoals;x++){
+    for(let y=0;y<=maxGoals;y++){
+      let p = poissonPMF(x,lh) * poissonPMF(y,la) * Math.max(tau(x,y,lh,la,rho), 1e-8);
+      tot += p;
+      if (x>y) pHome += p; else if (x===y) pDraw += p; else pAway += p;
+      if (x+y > 2) pOver25 += p; else pUnder25 += p;
+      if (x>0 && y>0) pBttsYes += p; else pBttsNo += p;
+    }
+  }
+  return {
+    home: pHome/tot, draw: pDraw/tot, away: pAway/tot,
+    over25: pOver25/tot, under25: pUnder25/tot,
+    bttsYes: pBttsYes/tot, bttsNo: pBttsNo/tot
+  };
+}
+
+// ---------------------------------------------------------------
+// Odds conversions
+// ---------------------------------------------------------------
+function decToAmerican(dec){
+  if (!dec || dec <= 1) return '';
+  if (dec >= 2) return '+' + Math.round((dec-1)*100);
+  return Math.round(-100/(dec-1)).toString();
+}
+function americanToDec(us){
+  if (us === '' || us === null || isNaN(us)) return '';
+  us = parseFloat(us);
+  if (us > 0) return (1 + us/100);
+  if (us < 0) return (1 + 100/Math.abs(us));
+  return '';
+}
+function impliedProb(dec){
+  if (!dec || dec <= 1) return 0;
+  return 1/dec;
+}
+
+// ---------------------------------------------------------------
+// Market rows config
+// ---------------------------------------------------------------
+const MARKETS = [
+  {key:'home', label:'1X2 — Gana Equipo 1', group:'1x2', defDec:2.30},
+  {key:'draw', label:'1X2 — Empate', group:'1x2', defDec:3.30},
+  {key:'away', label:'1X2 — Gana Equipo 2', group:'1x2', defDec:3.10},
+  {key:'over25', label:'Over 2.5 goles', group:'ou', defDec:1.95},
+  {key:'under25', label:'Under 2.5 goles', group:'ou', defDec:1.90},
+  {key:'bttsYes', label:'Ambos anotan — Sí', group:'btts', defDec:1.85},
+  {key:'bttsNo', label:'Ambos anotan — No', group:'btts', defDec:1.95},
+];
+
+const tbody = document.getElementById('oddsBody');
+MARKETS.forEach(m=>{
+  const tr = document.createElement('tr');
+  tr.dataset.key = m.key;
+  tr.innerHTML = `
+    <td class="mkt">${m.label}</td>
+    <td>
+      <div class="odds-input-pair">
+        <input type="number" step="0.01" class="dec-input" value="${m.defDec}">
+      </div>
+    </td>
+    <td>
+      <div class="odds-input-pair">
+        <input type="text" class="us-input" value="${decToAmerican(m.defDec)}">
+      </div>
+    </td>
+    <td class="modelPct">—</td>
+    <td class="marketPct">—</td>
+    <td class="edgeVal">—</td>
+    <td class="fairOdds fair">—</td>
+    <td><span class="pick-chip pick-pass">PASS</span></td>
+  `;
+  tbody.appendChild(tr);
+});
+
+tbody.addEventListener('input', (e)=>{
+  const tr = e.target.closest('tr');
+  if (e.target.classList.contains('dec-input')){
+    const dec = parseFloat(e.target.value);
+    tr.querySelector('.us-input').value = decToAmerican(dec);
+  } else if (e.target.classList.contains('us-input')){
+    const dec = americanToDec(e.target.value);
+    if (dec) tr.querySelector('.dec-input').value = dec.toFixed(2);
+  }
+  recalcAll();
+});
+
+document.querySelectorAll('#eloHome,#eloAway,#neutral,#rho,#importance,#featuredMarket').forEach(el=>{
+  el.addEventListener('input', recalcAll);
+  el.addEventListener('change', recalcAll);
+});
+
+function fmtPct(x){ return (x*100).toFixed(1) + '%'; }
+
+function computeLocal(){
+  const eloHome = parseFloat(eloHomeInput.value) || 1500;
+  const eloAway = parseFloat(eloAwayInput.value) || 1500;
+  const neutral = document.getElementById('neutral').checked;
+  const importance = parseFloat(document.getElementById('importance').value);
+  let rho = parseFloat(document.getElementById('rho').value);
+  if (isNaN(rho)) rho = -0.08;
+  const [lh, la] = estimateLambdas(eloHome, eloAway, neutral, importance);
+  const probs = dcProbs(lh, la, rho);
+  return {lh, la, probs};
+}
+
+const useApiCheckbox = document.getElementById('useApi');
+const apiUrlField = document.getElementById('apiUrlField');
+const apiStatusTxt = document.getElementById('apiStatusTxt');
+useApiCheckbox.addEventListener('change', ()=>{
+  apiUrlField.style.display = useApiCheckbox.checked ? 'flex' : 'none';
+  recalcAll();
+});
+document.getElementById('apiUrl').addEventListener('change', recalcAll);
+
+async function fetchFromApi(){
+  const base = document.getElementById('apiUrl').value.replace(/\/$/,'');
+  const neutral = document.getElementById('neutral').checked;
+  const importance = parseFloat(document.getElementById('importance').value);
+  const resp = await fetch(base + '/predict', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      home_team: homeSel.value, away_team: awaySel.value,
+      neutral: neutral, importance: importance
+    })
+  });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const data = await resp.json();
+  const lh = data.lambda_home, la = data.lambda_away;
+  // 1X2 viene del stacking (tu meta-learner real). Over/Under y BTTS
+  // vienen del Dixon-Coles en vivo, porque xgb/nn en tu pipeline solo
+  // clasifican 1X2, no modelan el marcador completo.
+  const probs = {
+    home: data.stack_home, draw: data.stack_draw, away: data.stack_away,
+    over25: data.dc_over25, under25: data.dc_under25,
+    bttsYes: data.dc_btts_yes, bttsNo: data.dc_btts_no
+  };
+  return {lh, la, probs, snapshotDate: data.snapshot_date};
+}
+
+async function recalcAll(){
+  let lh, la, probs;
+  if (useApiCheckbox.checked){
+    apiStatusTxt.style.display = 'block';
+    apiStatusTxt.textContent = 'Consultando tu API…';
+    try{
+      const r = await fetchFromApi();
+      lh = r.lh; la = r.la; probs = r.probs;
+      apiStatusTxt.textContent = '✓ Conectado a tu API — probabilidades del stacking real' +
+        (r.snapshotDate ? ' (snapshot ' + r.snapshotDate + ')' : '');
+      apiStatusTxt.style.color = 'var(--green)';
+    } catch(err){
+      apiStatusTxt.textContent = '✗ No se pudo conectar (' + err.message + '). Mostrando heurística local mientras tanto.';
+      apiStatusTxt.style.color = 'var(--red)';
+      const local = computeLocal(); lh = local.lh; la = local.la; probs = local.probs;
+    }
+  } else {
+    apiStatusTxt.style.display = 'none';
+    const local = computeLocal(); lh = local.lh; la = local.la; probs = local.probs;
+  }
+  renderAll(lh, la, probs);
+}
+
+function renderAll(lh, la, probs){
+  let rhoForHeatmap = parseFloat(document.getElementById('rho').value);
+  if (isNaN(rhoForHeatmap)) rhoForHeatmap = -0.08;
+  renderScoreHeatmap(lh, la, rhoForHeatmap);
+  document.getElementById('xgHomeName').textContent = homeSel.value || 'Local';
+  document.getElementById('xgAwayName').textContent = awaySel.value || 'Visitante';
+  document.getElementById('xgHomeVal').textContent = lh.toFixed(2);
+  document.getElementById('xgAwayVal').textContent = la.toFixed(2);
+  const hLo = Math.max(0, lh - 1.28*Math.sqrt(lh)), hHi = lh + 1.28*Math.sqrt(lh);
+  const aLo = Math.max(0, la - 1.28*Math.sqrt(la)), aHi = la + 1.28*Math.sqrt(la);
+  document.getElementById('xgHomeRange').textContent = `rango 80%: ${hLo.toFixed(2)} – ${hHi.toFixed(2)}`;
+  document.getElementById('xgAwayRange').textContent = `rango 80%: ${aLo.toFixed(2)} – ${aHi.toFixed(2)}`;
+  const maxBar = 3.2;
+  document.getElementById('xgHomeBar').style.width = Math.min(100, lh/maxBar*100) + '%';
+  document.getElementById('xgAwayBar').style.width = Math.min(100, la/maxBar*100) + '%';
+
+  document.getElementById('pHomeTxt').textContent = fmtPct(probs.home);
+  document.getElementById('pDrawTxt').textContent = fmtPct(probs.draw);
+  document.getElementById('pAwayTxt').textContent = fmtPct(probs.away);
+  document.getElementById('pHomeBar').style.width = (probs.home*100) + '%';
+  document.getElementById('pDrawBar').style.width = (probs.draw*100) + '%';
+  document.getElementById('pAwayBar').style.width = (probs.away*100) + '%';
+
+  const decByKey = {};
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const key = tr.dataset.key;
+    const dec = parseFloat(tr.querySelector('.dec-input').value);
+    decByKey[key] = dec;
+  });
+
+  const groups = {'1x2':['home','draw','away'], 'ou':['over25','under25'], 'btts':['bttsYes','bttsNo']};
+  const noVigProb = {};
+  Object.entries(groups).forEach(([g, keys])=>{
+    const raw = keys.map(k=> impliedProb(decByKey[k]) );
+    const sum = raw.reduce((a,b)=>a+b,0) || 1;
+    keys.forEach((k,i)=> noVigProb[k] = raw[i]/sum );
+  });
+
+  let edgeByKey = {};
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const key = tr.dataset.key;
+    const modelP = probs[key];
+    const marketP = noVigProb[key];
+    const edge = modelP - marketP;
+    edgeByKey[key] = edge;
+    const fairDec = modelP > 0 ? (1/modelP) : Infinity;
+
+    tr.querySelector('.modelPct').textContent = fmtPct(modelP);
+    tr.querySelector('.marketPct').textContent = fmtPct(marketP);
+    const edgeCell = tr.querySelector('.edgeVal');
+    edgeCell.textContent = (edge>=0?'+':'') + (edge*100).toFixed(1) + '%';
+    edgeCell.className = 'edgeVal edge-val ' + (edge>=0?'edge-pos':'edge-neg');
+    tr.querySelector('.fairOdds').textContent = isFinite(fairDec) ? fairDec.toFixed(2) : '—';
+
+    const chip = tr.querySelector('.pick-chip');
+    if (edge >= 0.03){
+      chip.textContent = 'BET'; chip.className = 'pick-chip pick-bet';
+    } else if (edge <= -0.03){
+      chip.textContent = 'FADE'; chip.className = 'pick-chip pick-fade';
+    } else {
+      chip.textContent = 'PASS'; chip.className = 'pick-chip pick-pass';
+    }
+  });
+
+  const featured = document.getElementById('featuredMarket').value;
+  const fEdge = edgeByKey[featured] || 0;
+  const circumference = 351.86;
+  const visual = Math.max(-1, Math.min(1, fEdge/0.30));
+  const offset = circumference * (1 - (visual+1)/2);
+  const arc = document.getElementById('edgeArc');
+  arc.style.strokeDashoffset = offset;
+  const arcColor = fEdge >= 0.03 ? '#3ecf8e' : (fEdge <= -0.03 ? '#ff5c5c' : '#e8b93e');
+  arc.style.stroke = arcColor;
+  document.getElementById('edgeMeterNum').textContent = (fEdge>=0?'+':'') + (fEdge*100).toFixed(1) + '%';
+  document.getElementById('edgeMeterNum').style.color = arcColor;
+
+  const pickChip = document.getElementById('pickChip');
+  if (fEdge >= 0.03){ pickChip.textContent='BET'; pickChip.className='pick-chip pick-bet'; }
+  else if (fEdge <= -0.03){ pickChip.textContent='FADE'; pickChip.className='pick-chip pick-fade'; }
+  else { pickChip.textContent='PASS'; pickChip.className='pick-chip pick-pass'; }
+}
+
+// ---------------------------------------------------------------
+// Mapa de calor de marcadores (0-5 goles cada lado)
+// ---------------------------------------------------------------
+function renderScoreHeatmap(lh, la, rho){
+  const maxG = 5;
+  let matrix = [];
+  let maxP = 0;
+  for(let x=0;x<=maxG;x++){
+    let row = [];
+    for(let y=0;y<=maxG;y++){
+      const p = poissonPMF(x,lh) * poissonPMF(y,la) * Math.max(tau(x,y,lh,la,rho), 1e-8);
+      row.push(p);
+      if (p > maxP) maxP = p;
+    }
+    matrix.push(row);
+  }
+  // normalizar contra el total real (incluye colas >5, aproximado con dcProbs ya usado en otro lado)
+  let total = 0;
+  matrix.forEach(row => row.forEach(p => total += p));
+
+  let best = {x:0,y:0,p:0};
+  matrix.forEach((row,x) => row.forEach((p,y) => { if (p > best.p) best = {x,y,p}; }));
+
+  const wrap = document.getElementById('scoreHeatmapWrap');
+  let html = `<div class="heatmap-grid" style="grid-template-columns:38px repeat(${maxG+1},38px);">`;
+  html += `<div class="hm-label"></div>`;
+  for(let y=0;y<=maxG;y++) html += `<div class="hm-axis-label" style="display:flex;align-items:center;justify-content:center;">${y}</div>`;
+  for(let x=0;x<=maxG;x++){
+    html += `<div class="hm-axis-label" style="display:flex;align-items:center;justify-content:center;">${x}</div>`;
+    for(let y=0;y<=maxG;y++){
+      const p = matrix[x][y] / total;
+      const isBest = (x===best.x && y===best.y);
+      const alpha = Math.min(1, p / (maxP/total) );
+      const bg = `rgba(91,141,239,${(0.12 + alpha*0.75).toFixed(2)})`;
+      html += `<div class="hm-cell ${isBest?'hm-best':''}" style="background:${bg}">${(p*100).toFixed(1)}</div>`;
+    }
+  }
+  html += `</div>`;
+  wrap.innerHTML = html;
+  document.getElementById('scoreTopNote').innerHTML =
+    `Marcador más probable: <b style="color:var(--green)">${best.x}-${best.y}</b> (${(best.p/total*100).toFixed(1)}%). Filas = goles local, columnas = goles visita.`;
+}
+
+// ---------------------------------------------------------------
+// Gráficos con datos REALES de tus scripts (09_evaluation.R,
+// 09b_evaluation_worldcup.R, 09e_calibration_diagnostics.R)
+// ---------------------------------------------------------------
+const CHART_COLORS = { blue:'#5b8def', green:'#3ecf8e', muted:'#7c8798', line:'#232a3a', text:'#e8ecf2' };
+
+// Todo lo anterior (MARKETS, tbody, funciones) ya existe en memoria en este punto.
+// Ahora sí, con todo definido, inicializamos el selector de partido y el primer render.
+// IMPORTANTE: esto va ANTES de tocar Chart.js -- si Chart.js fallara por lo que
+// sea (CDN bloqueado, etc.), el resto del dashboard (tabla de cuotas, edge meter,
+// heatmap) debe seguir funcionando igual.
+populateCruce();
+
+try {
+  if (typeof Chart === 'undefined') throw new Error('Chart.js no cargó (¿CDN bloqueado?)');
+  Chart.defaults.color = CHART_COLORS.muted;
+  Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+  Chart.defaults.font.size = 10;
+
+  new Chart(document.getElementById('chartAccuracy'), {
+    type: 'bar',
+    data: {
+      labels: ['Naive','Dixon-Coles','Red neuronal','XGBoost','Promedio','Stacking'],
+      datasets: [
+        {
+          label: 'Todos los torneos',
+          data: [47.31, 56.32, 59.25, 60.01, 60.01, 62.03],
+          backgroundColor: CHART_COLORS.blue, borderRadius: 3, barPercentage: 0.65
+        },
+        {
+          label: 'Solo Mundial 2026',
+          data: [null, 52.27, 59.09, 61.36, 54.55, 62.50],
+          backgroundColor: CHART_COLORS.green, borderRadius: 3, barPercentage: 0.65
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 70, grid: { color: CHART_COLORS.line },
+             ticks: { callback: v => v + '%' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('chartCalibration'), {
+    type: 'line',
+    data: {
+      labels: ['8.5','17.4','27.4','33.3','39.7','49.6','59.8','68.1','76.5','86.4'],
+      datasets: [
+        {
+          label: 'Stacking (real)',
+          data: [6.2,14.4,31.8,36.0,40.2,49.1,61.4,66.1,78.5,89.4],
+          borderColor: CHART_COLORS.green, backgroundColor: CHART_COLORS.green,
+          tension: 0.25, pointRadius: 3
+        },
+        {
+          label: 'Calibración perfecta',
+          data: [8.5,17.4,27.4,33.3,39.7,49.6,59.8,68.1,76.5,86.4],
+          borderColor: CHART_COLORS.muted, borderDash: [4,4], pointRadius: 0, tension: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 9 } } } },
+      scales: {
+        x: { title: { display: true, text: 'Prob. predicha (%)', font: {size:9} }, grid: { color: CHART_COLORS.line } },
+        y: { title: { display: true, text: 'Frecuencia real (%)', font: {size:9} }, grid: { color: CHART_COLORS.line } }
+      }
+    }
+  });
+} catch (err) {
+  console.error('No se pudieron crear los gráficos Chart.js:', err);
+}
+
+// ---------------------------------------------------------------
+// Ranking Elo en vivo (a partir del objeto ELO ya cargado)
+// ---------------------------------------------------------------
+function renderEloRanking(){
+  const wrap = document.getElementById('eloRankingWrap');
+  if (!wrap) return;
+  const sorted = Object.entries(ELO).sort((a,b) => b[1]-a[1]).slice(0, 10);
+  const maxElo = sorted[0][1];
+  let html = '';
+  sorted.forEach(([team, elo], i) => {
+    const pct = Math.max(8, (elo / maxElo) * 100);
+    html += `<div class="elo-rank-row">
+      <div class="elo-rank-num">${i+1}</div>
+      <div class="elo-rank-name">${team}</div>
+      <div class="elo-rank-bar-track"><div class="elo-rank-bar-fill" style="width:${pct}%"></div></div>
+      <div class="elo-rank-val">${elo}</div>
+    </div>`;
+  });
+  wrap.innerHTML = html;
+}
+renderEloRanking();
+
+// ---------------------------------------------------------------
+// Cuotas de mercado en vivo (The Odds API — the-odds-api.com)
+// ---------------------------------------------------------------
+const oddsApiKeyInput = document.getElementById('oddsApiKey');
+const oddsRegionSel = document.getElementById('oddsRegion');
+const oddsAutoRefreshSel = document.getElementById('oddsAutoRefresh');
+const oddsApiStatus = document.getElementById('oddsApiStatus');
+const liveOddsListWrap = document.getElementById('liveOddsListWrap');
+const btnFetchOdds = document.getElementById('btnFetchOdds');
+
+// recordar la key entre sesiones (queda solo en tu navegador, nunca se envía a ningún lado más que a the-odds-api.com)
+try {
+  const savedKey = localStorage.getItem('andre26_odds_api_key');
+  if (savedKey) oddsApiKeyInput.value = savedKey;
+} catch(e) {}
+
+let lastLiveOdds = [];
+let autoRefreshTimer = null;
+let countdownTimer = null;
+let secsUntilRefresh = 0;
+let sessionRequestCount = 0;
+const oddsHistoryStore = {};
+let activeHistoryKey = null;
+let oddsHistoryChart = null;
+
+function avgPrice(list){
+  const v = list.filter(x => typeof x === 'number' && x > 1);
+  if (v.length === 0) return null;
+  return v.reduce((a,b)=>a+b,0) / v.length;
+}
+
+async function fetchLiveOdds(){
+  const key = oddsApiKeyInput.value.trim();
+  if (!key){
+    oddsApiStatus.textContent = 'Pega tu API key primero.';
+    oddsApiStatus.style.color = 'var(--red)';
+    return;
+  }
+  try { localStorage.setItem('andre26_odds_api_key', key); } catch(e) {}
+
+  const region = oddsRegionSel.value;
+  const url = `https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds?regions=${region}&markets=h2h,totals&oddsFormat=decimal&apiKey=${encodeURIComponent(key)}`;
+
+  oddsApiStatus.textContent = 'Consultando the-odds-api.com…';
+  oddsApiStatus.style.color = 'var(--muted2)';
+  document.getElementById('oddsLiveDot').style.display = 'inline-block';
+
+  try {
+    const resp = await fetch(url);
+    const remaining = resp.headers.get('x-requests-remaining');
+    if (!resp.ok){
+      const body = await resp.text();
+      throw new Error(`HTTP ${resp.status} — ${body.slice(0,150)}`);
+    }
+    const data = await resp.json();
+
+    lastLiveOdds = data.map(ev => {
+      const h2hHome = [], h2hDraw = [], h2hAway = [], over25 = [], under25 = [];
+      (ev.bookmakers || []).forEach(bk => {
+        (bk.markets || []).forEach(mkt => {
+          if (mkt.key === 'h2h'){
+            mkt.outcomes.forEach(o => {
+              if (o.name === ev.home_team) h2hHome.push(o.price);
+              else if (o.name === ev.away_team) h2hAway.push(o.price);
+              else if (o.name === 'Draw') h2hDraw.push(o.price);
+            });
+          } else if (mkt.key === 'totals'){
+            mkt.outcomes.forEach(o => {
+              if (o.point === 2.5 && o.name === 'Over') over25.push(o.price);
+              if (o.point === 2.5 && o.name === 'Under') under25.push(o.price);
+            });
+          }
+        });
+      });
+      return {
+        home: ev.home_team, away: ev.away_team, commence: ev.commence_time,
+        home_dec: avgPrice(h2hHome), draw_dec: avgPrice(h2hDraw), away_dec: avgPrice(h2hAway),
+        over25_dec: avgPrice(over25), under25_dec: avgPrice(under25),
+        n_books: (ev.bookmakers || []).length
+      };
+    });
+
+    oddsApiStatus.innerHTML = `<span style="color:var(--green)">&#10003; ${lastLiveOdds.length} partidos cargados</span> — actualizado ${new Date().toLocaleTimeString('es-PE')}` +
+      (remaining ? ` · ${remaining} peticiones restantes este mes` : '') +
+      ` · ${++sessionRequestCount} peticiones en esta sesión`;
+
+    // Guardar historial para el gráfico de movimiento de cuotas
+    const now = Date.now();
+    lastLiveOdds.forEach(m => {
+      const key = `${m.home}|${m.away}`;
+      if (!oddsHistoryStore[key]) oddsHistoryStore[key] = [];
+      oddsHistoryStore[key].push({ t: now, home_dec: m.home_dec, draw_dec: m.draw_dec, away_dec: m.away_dec });
+      if (oddsHistoryStore[key].length > 30) oddsHistoryStore[key].shift(); // no crecer infinito
+    });
+    if (!activeHistoryKey && lastLiveOdds.length > 0) activeHistoryKey = `${lastLiveOdds[0].home}|${lastLiveOdds[0].away}`;
+    updateOddsHistoryChart();
+
+    // Si el partido activo sigue apareciendo en este fetch, reaplica sus
+    // cuotas nuevas a la tabla automáticamente -- así el %EDGE se
+    // recalcula solo con cada actualización, sin que tengas que volver
+    // a hacer clic en "Usar estas cuotas" cada vez.
+    if (activeHistoryKey){
+      const stillThere = lastLiveOdds.find(m => `${m.home}|${m.away}` === activeHistoryKey);
+      if (stillThere) applyLiveOddsToTable(stillThere, true);
+    }
+
+    renderLiveOddsList();
+  } catch(err){
+    oddsApiStatus.textContent = '✗ Error: ' + err.message + ' (revisa tu API key, o si tu navegador bloquea la petición por CORS)';
+    oddsApiStatus.style.color = 'var(--red)';
+  }
+  document.getElementById('oddsLiveDot').style.display = 'none';
+  resetCountdown();
+}
+
+function renderLiveOddsList(){
+  if (lastLiveOdds.length === 0){
+    liveOddsListWrap.innerHTML = '<div class="note">No hay partidos de Mundial disponibles en este momento en the-odds-api.com para esa región.</div>';
+    return;
+  }
+  let html = '';
+  lastLiveOdds.forEach((m, i) => {
+    const date = m.commence ? new Date(m.commence).toLocaleString('es-PE', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    html += `<div class="live-odds-row">
+      <div class="teams">${m.home} vs ${m.away} <span style="color:var(--muted2);font-weight:400;">— ${date} (${m.n_books} casas)</span></div>
+      <div class="prices">
+        <span>1: ${m.home_dec ? m.home_dec.toFixed(2) : '—'}</span>
+        <span>X: ${m.draw_dec ? m.draw_dec.toFixed(2) : '—'}</span>
+        <span>2: ${m.away_dec ? m.away_dec.toFixed(2) : '—'}</span>
+        <span>O2.5: ${m.over25_dec ? m.over25_dec.toFixed(2) : '—'}</span>
+        <span>U2.5: ${m.under25_dec ? m.under25_dec.toFixed(2) : '—'}</span>
+      </div>
+      <button class="use-btn" data-idx="${i}">Usar estas cuotas &rarr;</button>
+    </div>`;
+  });
+  liveOddsListWrap.innerHTML = html;
+  liveOddsListWrap.querySelectorAll('.use-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyLiveOddsToTable(lastLiveOdds[parseInt(btn.dataset.idx)]));
+  });
+}
+
+function applyLiveOddsToTable(m, silent){
+  const setOdd = (key, dec) => {
+    if (!dec) return;
+    const tr = tbody.querySelector(`tr[data-key="${key}"]`);
+    if (!tr) return;
+    const input = tr.querySelector('.dec-input');
+    input.value = dec.toFixed(2);
+    input.dispatchEvent(new Event('input', {bubbles:true}));
+    tr.classList.remove('flash-update'); void tr.offsetWidth; tr.classList.add('flash-update');
+  };
+  setOdd('home', m.home_dec); setOdd('draw', m.draw_dec); setOdd('away', m.away_dec);
+  setOdd('over25', m.over25_dec); setOdd('under25', m.under25_dec);
+  if (!silent){
+    oddsApiStatus.innerHTML = `<span style="color:var(--green)">&#10003; Cuotas de ${m.home} vs ${m.away} aplicadas a la tabla</span>`;
+  }
+  activeHistoryKey = `${m.home}|${m.away}`;
+  updateOddsHistoryChart();
+}
+
+function updateOddsHistoryChart(){
+  const box = document.getElementById('oddsHistoryBox');
+  const hist = activeHistoryKey ? oddsHistoryStore[activeHistoryKey] : null;
+  if (!hist || hist.length < 2 || typeof Chart === 'undefined'){
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'block';
+  const labels = hist.map(h => new Date(h.t).toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit',second:'2-digit'}));
+  const teams = activeHistoryKey.split('|');
+  try {
+    if (oddsHistoryChart){
+      oddsHistoryChart.data.labels = labels;
+      oddsHistoryChart.data.datasets[0].data = hist.map(h => h.home_dec);
+      oddsHistoryChart.data.datasets[1].data = hist.map(h => h.draw_dec);
+      oddsHistoryChart.data.datasets[2].data = hist.map(h => h.away_dec);
+      oddsHistoryChart.options.plugins.title.text = `Movimiento de cuota: ${teams[0]} vs ${teams[1]}`;
+      oddsHistoryChart.update();
+    } else {
+      oddsHistoryChart = new Chart(document.getElementById('chartOddsHistory'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: '1 (Eq.1)', data: hist.map(h=>h.home_dec), borderColor:'#5b8def', tension:0.2, pointRadius:2 },
+            { label: 'X', data: hist.map(h=>h.draw_dec), borderColor:'#e8b93e', tension:0.2, pointRadius:2 },
+            { label: '2 (Eq.2)', data: hist.map(h=>h.away_dec), borderColor:'#ff5c5c', tension:0.2, pointRadius:2 }
+          ]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins: {
+            legend: { display:true, labels:{boxWidth:8, font:{size:9}} },
+            title: { display:true, text:`Movimiento de cuota: ${teams[0]} vs ${teams[1]}`, font:{size:10}, color:'#7c8798' }
+          },
+          scales: {
+            x: { grid:{display:false}, ticks:{font:{size:8}} },
+            y: { grid:{color:'#232a3a'}, ticks:{font:{size:8}} }
+          }
+        }
+      });
+    }
+  } catch(err){ console.error('chartOddsHistory:', err); }
+}
+
+function resetCountdown(){
+  if (countdownTimer) clearInterval(countdownTimer);
+  const secs = parseInt(oddsAutoRefreshSel.value);
+  const countdownEl = document.getElementById('oddsCountdown');
+  if (secs <= 0){ countdownEl.textContent = ''; return; }
+  secsUntilRefresh = secs;
+  countdownEl.textContent = `próxima actualización en ${secsUntilRefresh}s`;
+  countdownTimer = setInterval(() => {
+    secsUntilRefresh--;
+    if (secsUntilRefresh <= 0){ countdownEl.textContent = 'actualizando…'; }
+    else { countdownEl.textContent = `próxima actualización en ${secsUntilRefresh}s`; }
+  }, 1000);
+}
+
+
+btnFetchOdds.addEventListener('click', fetchLiveOdds);
+
+function applyAutoRefreshSetting(){
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  const secs = parseInt(oddsAutoRefreshSel.value);
+  if (secs > 0){
+    autoRefreshTimer = setInterval(fetchLiveOdds, secs * 1000);
+    resetCountdown();
+  } else {
+    if (countdownTimer) clearInterval(countdownTimer);
+    document.getElementById('oddsCountdown').textContent = '';
+  }
+}
+oddsAutoRefreshSel.addEventListener('change', applyAutoRefreshSetting);
+
+// Si ya hay una API key guardada de una sesión anterior, arranca solo
+// (auto-refresh viene activado por defecto, cada 60s)
+if (oddsApiKeyInput.value.trim()){
+  fetchLiveOdds();
+  applyAutoRefreshSetting();
+}
+
+// ---------------------------------------------------------------
+// Reloj en vivo en el header (solo estético, confirma que la página
+// sigue "corriendo" -- no afecta ningún cálculo)
+// ---------------------------------------------------------------
+function tickLiveClock(){
+  const el = document.getElementById('liveClock');
+  if (el) el.textContent = new Date().toLocaleTimeString('es-PE', {hour12:false});
+}
+tickLiveClock();
+setInterval(tickLiveClock, 1000);
+
+// ---------------------------------------------------------------
+// Vista móvil real: un iframe con su propio viewport de 390px, para
+// que los @media queries se activen de verdad (clonar el documento
+// actual completo -- incluye el estado ya calculado del formulario).
+// ---------------------------------------------------------------
+const btnMobile = document.getElementById('btnMobile');
+const btnClosePhone = document.getElementById('btnClosePhone');
+const overlay = document.getElementById('mobilePreviewOverlay');
+const phoneIframe = document.getElementById('phoneIframe');
+
+btnMobile.addEventListener('click', () => {
+  const snapshot = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  phoneIframe.srcdoc = snapshot;
+  overlay.classList.add('active');
+});
+btnClosePhone.addEventListener('click', () => {
+  overlay.classList.remove('active');
+  phoneIframe.srcdoc = '';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# --- Artefactos de R / RStudio ---
+.Rproj.user/
+.Rhistory
+.RData
+.RDataTmp*
+.Ruserdata
+*.Rproj.user
+
+# --- Modelos entrenados y snapshots (regenerables con pipeline.R) ---
+output/
+
+# --- CSV intermedios/generados (regenerables desde data/results.csv) ---
+data/results_clean.csv
+data/results_elo.csv
+data/results_dixoncoles.csv
+data/model_features.csv
+data/preds_*.csv
+data/ensemble_predictions.csv
+data/evaluation_summary.csv
+data/evaluation_worldcup.csv
+data/significance_*.csv
+data/calibration_*.csv
+
+# --- Sistema ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Docker ---
+*.log
+
+# --- Si alguna vez agregas una API key por error a un script de prueba ---
+.env
+*apikey*
+*api_key*
