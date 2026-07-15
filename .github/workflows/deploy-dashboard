@@ -2,10 +2,10 @@ name: Deploy Dashboard to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [principal]
     paths:
-      - 'dashboard/**'      # solo dispara si cambia el dashboard
-  workflow_dispatch:        # permite dispararlo a mano desde Actions tab
+      - 'dashboard/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,14 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Copia el dashboard a una carpeta temporal "site" (requisito de Pages)
       - name: Prepare site
         run: |
-          mkdir site
+          mkdir -p site
           cp dashboard/andre_mundial2026.html site/index.html
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
