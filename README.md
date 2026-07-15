@@ -128,7 +128,7 @@ con Render, Railway o Fly.io.
 
 ## Dashboard
 
-`dashboard/andre_mundial2026.html` es autocontenido — ábrelo directo en el
+`dashboard/index.html` es autocontenido — ábrelo directo en el
 navegador, no necesita servidor ni build step. Incluye:
 - Selector de partido con el bracket real del Mundial 2026 (octavos → final,
   incluyendo escenarios hipotéticos para cruces aún no definidos)
