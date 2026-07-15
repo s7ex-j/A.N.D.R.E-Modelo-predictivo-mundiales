@@ -4,7 +4,7 @@ on:
   push:
     branches: [principal]
     paths:
-      - 'dashboard/**'
+      - 'Dashboard/**'
   workflow_dispatch:
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
       - name: Prepare site
         run: |
           mkdir -p site
-          cp dashboard/andre_mundial2026.html site/index.html
+          cp Dashboard/andre_mundial2026.html site/index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
