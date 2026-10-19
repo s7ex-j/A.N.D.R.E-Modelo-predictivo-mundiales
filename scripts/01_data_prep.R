@@ -1,6 +1,6 @@
 ## =============================================================
-## 01_data_prep.R — VERSIÓN CORREGIDA
-## Único cambio: aplica team_name_map.csv para unificar selecciones
+## 01_data_prep.R
+## Limpieza y target 1X2. Aplica team_name_map.csv para unificar selecciones
 ## que cambiaron de nombre (West Germany -> Germany, etc.) ANTES de
 ## calcular nada. Sin esto, el Elo y Dixon-Coles tratan a esas
 ## selecciones como equipos nuevos sin historia.
@@ -9,8 +9,8 @@
 ## convenciones (FIFA suele tratar a Serbia como el continuador
 ## administrativo de Yugoslavia/Serbia y Montenegro), pero es una
 ## simplificación real -- Croacia, Eslovenia, Bosnia, Macedonia del
-## Norte y Montenegro también heredan parte de esa historia. Revisa
-## team_name_map.csv y ajústalo si no estás de acuerdo con algún mapeo.
+## Norte y Montenegro también heredan parte de esa historia. Los mapeos
+## viven en team_name_map.csv y se pueden ajustar ahí.
 ## =============================================================
 suppressMessages({
   library(dplyr)
