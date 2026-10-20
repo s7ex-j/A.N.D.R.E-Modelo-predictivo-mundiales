@@ -150,6 +150,5 @@ saveRDS(list(gamma = gamma, rho = rho, snapshot_date = TODAY),
 cat("team_state.rds guardado —", nrow(team_state), "selecciones.\n")
 cat("dc_global.rds guardado — gamma:", round(gamma,3), " rho:", round(rho,3), "\n")
 cat("Snapshot generado el:", as.character(TODAY), "\n")
-cat("\nNota: si ya estás usando 07_model_deep_learning.R y 08_ensemble.R en\n")
-cat("sus versiones _FIX (las que vienen en la auditoría), nnet_scaling.rds,\n")
-cat("stack_colnames.rds y calibration_functions.rds ya se guardan solos.\n")
+cat("\nNota: nnet_scaling.rds, stack_colnames.rds y calibration_functions.rds\n")
+cat("los generan 07_model_deep_learning.R y 08_ensemble.R.\n")

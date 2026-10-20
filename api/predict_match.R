@@ -1,14 +1,15 @@
 ## =============================================================
-## predict_match.R — VERSIÓN CORREGIDA
-## Fixes vs la versión anterior:
-##  1. feature_cols ahora es EXACTAMENTE el de 04_feature_engineering.R
-##     (22 features, confirmado también contra 05 y 07).
-##  2. xgb se carga con readRDS() (así se guardó), no xgb.load().
-##  3. El stacking se lee por NOMBRE de columna ("A","D","H"), no por
-##     posición -- cv.glmnet devuelve las clases en ese orden porque
-##     así se entrenó factor(result, levels=c("A","D","H")).
-##  4. lambda_home usa gamma condicionado a !neutral, consistente con
-##     el fix de 03_dixon_coles_FIX.R (debes re-correr 03->10 primero).
+## predict_match.R
+## Lógica de predicción en vivo que usa plumber.R.
+##  - feature_cols es EXACTAMENTE el de 04_feature_engineering.R
+##    (22 features, igual que en 05 y 07).
+##  - XGBoost se carga con readRDS() (así lo guarda 05), no xgb.load().
+##  - El stacking se lee por NOMBRE de clase ("A","D","H"), no por
+##    posición: cv.glmnet devuelve las clases en el orden de
+##    factor(result, levels=c("A","D","H")).
+##  - Con neutral = TRUE se anula la ventaja de local (gamma = 0),
+##    porque en un cruce hipotético no hay local real. El
+##    entrenamiento (03_dixon_coles.R) sí usa gamma incondicional.
 ## =============================================================
 suppressMessages({
   library(data.table)
@@ -25,14 +26,14 @@ DATA_DIR <- "../data"
 ## ---- Cargar todo UNA VEZ al arrancar la API ----
 team_state     <- readRDS(file.path(OUT_DIR, "team_state.rds"))
 dc_global      <- readRDS(file.path(OUT_DIR, "dc_global.rds"))
-nnet_scaling   <- readRDS(file.path(OUT_DIR, "nnet_scaling.rds"))    # requiere ajuste en 07
-stack_colnames <- readRDS(file.path(OUT_DIR, "stack_colnames.rds"))  # requiere ajuste en 08 (ya en 08_ensemble_FIX.R)
+nnet_scaling   <- readRDS(file.path(OUT_DIR, "nnet_scaling.rds"))    # generado por 07
+stack_colnames <- readRDS(file.path(OUT_DIR, "stack_colnames.rds"))  # generado por 08
 
-xgb_model   <- readRDS(file.path(OUT_DIR, "model_xgb_classifier.rds"))  # <- FIX: readRDS, no xgb.load
+xgb_model   <- readRDS(file.path(OUT_DIR, "model_xgb_classifier.rds"))  # readRDS, no xgb.load
 nnet_model  <- readRDS(file.path(OUT_DIR, "model_nnet.rds"))
 stack_model <- readRDS(file.path(OUT_DIR, "model_stacking.rds"))
 
-## Calibración isotónica guardada por 08_ensemble_FIX.R (opcional -- si no
+## Calibración isotónica guardada por 08_ensemble.R (opcional -- si no
 ## existe el archivo, se sirve sin calibrar y basta con que stack_colnames
 ## no tenga sufijo _cal)
 calibration_path <- file.path(OUT_DIR, "calibration_functions.rds")
@@ -109,7 +110,7 @@ predict_match <- function(home_team, away_team, neutral = FALSE, importance = 1.
   gamma <- dc_global$gamma
   rho   <- dc_global$rho
 
-  ## FIX: gamma condicionado a !neutral (consistente con 03_dixon_coles_FIX.R)
+  ## Cruce neutral: sin ventaja de local (ver cabecera)
   home_adv_dc <- if (neutral) 0 else gamma
   lambda_home <- exp(th$att + ta$def + home_adv_dc)
   lambda_away <- exp(ta$att + th$def)
@@ -165,7 +166,7 @@ predict_match <- function(home_team, away_team, neutral = FALSE, importance = 1.
     nn_p_home_cal = nn_cal$home,   nn_p_draw_cal = nn_cal$draw,   nn_p_away_cal = nn_cal$away,
     xgb_p_home_cal = xgb_cal$home, xgb_p_draw_cal = xgb_cal$draw, xgb_p_away_cal = xgb_cal$away,
     # también dejamos las versiones sin calibrar por si stack_colnames viene
-    # de una corrida sin calibración (08_ensemble.R original, no el _FIX)
+    # de una corrida sin calibración
     dc_p_home = dc$home,   dc_p_draw = dc$draw,   dc_p_away = dc$away,
     nn_p_home = nn_p$home, nn_p_draw = nn_p$draw, nn_p_away = nn_p$away,
     xgb_p_home = xgb_p$home, xgb_p_draw = xgb_p$draw, xgb_p_away = xgb_p$away
@@ -179,7 +180,7 @@ predict_match <- function(home_team, away_team, neutral = FALSE, importance = 1.
   base_probs <- base_probs_all[, ..stack_colnames]
 
   stack_raw <- predict(stack_model, as.matrix(base_probs), s = "lambda.min", type = "response")[,,1]
-  # FIX: extraer por nombre de dimensión ("A","D","H"), no por posición
+  # Extraer por nombre de dimensión ("A","D","H"), no por posición
   stack_p <- list(home = unname(stack_raw["H"]), draw = unname(stack_raw["D"]), away = unname(stack_raw["A"]))
 
   list(

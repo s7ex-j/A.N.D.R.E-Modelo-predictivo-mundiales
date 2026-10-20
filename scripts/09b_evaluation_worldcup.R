@@ -1,9 +1,9 @@
 ## =============================================================
 ## 09b_evaluation_worldcup.R
-## Tu 09_evaluation.R mide accuracy sobre TODOS los partidos desde
+## 09_evaluation.R mide accuracy sobre TODOS los partidos desde
 ## 2023 (amistosos + eliminatorias + todo). Esto mide específicamente
-## sobre partidos de COPA DEL MUNDO (2018, 2022, 2026) -- que es lo
-## que realmente te importa. El accuracy en Mundial puede ser distinto
+## sobre partidos de COPA DEL MUNDO (2018, 2022, 2026), que es el
+## caso de uso del modelo. El accuracy en Mundial puede ser distinto
 ## al agregado: los partidos de Mundial tienden a ser más parejos
 ## (todos los equipos ya clasificaron) pero también hay menos margen
 ## de error porque son eliminatorias directas.
@@ -25,7 +25,7 @@ wc_ids <- results_clean[tn == "fifa world cup", match_id]
 
 if (length(wc_ids) == 0) {
   cat("AVISO: no se encontraron partidos con tournament == 'FIFA World Cup'.\n")
-  cat("Valores únicos que contienen 'world cup' en tu results_clean.csv:\n")
+  cat("Valores únicos que contienen 'world cup' en results_clean.csv:\n")
   print(unique(results_clean$tournament[grepl("world cup", tn)]))
   stop("Revisa el nombre exacto del torneo arriba y ajusta el filtro si es distinto.")
 }
@@ -33,12 +33,12 @@ ens_wc <- ens[match_id %in% wc_ids]
 
 cat("Partidos de Copa del Mundo en el set de evaluación (2023+):", nrow(ens_wc), "\n")
 if (nrow(ens_wc) == 0) {
-  cat("Total de partidos de Copa del Mundo en TODA tu historia (1930-2026):", length(wc_ids), "\n")
+  cat("Total de partidos de Copa del Mundo en todo el histórico (1930-2026):", length(wc_ids), "\n")
   cat("Rango de fechas de ensemble_predictions.csv:",
       as.character(min(ens$date)), "-", as.character(max(ens$date)), "\n")
   stop("No hay partidos de Mundial dentro de esa ventana de fechas todavía. Si el ",
        "Mundial 2026 ya empezó y esto sigue en 0, revisa que resultados.csv esté ",
-       "actualizado y que 08_ensemble_FIX.R se haya corrido DESPUÉS de actualizarlo.")
+       "actualizado y que 08_ensemble.R se haya corrido DESPUÉS de actualizarlo.")
 }
 
 rps <- function(p_away, p_draw, p_home, result) {

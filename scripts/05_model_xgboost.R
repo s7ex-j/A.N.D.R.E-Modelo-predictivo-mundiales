@@ -4,8 +4,7 @@
 ## de goles esperados por equipo. Usa como features las variables
 ## intermedias de Dixon-Coles + Elo + forma + contexto.
 ##
-## NOTA: requiere install.packages("xgboost") -- no disponible en
-## el sandbox de Claude (sin acceso a CRAN), pero sí en tu RStudio.
+## Requiere install.packages("xgboost").
 ## =============================================================
 suppressMessages({
   library(data.table)

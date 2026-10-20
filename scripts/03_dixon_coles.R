@@ -1,29 +1,18 @@
 ## =============================================================
-## 03_dixon_coles.R — VERSIÓN CORREGIDA (revisión 2)
+## 03_dixon_coles.R
+## Dixon-Coles walk-forward (reajuste cada 90 días, decaimiento
+## temporal exponencial, ridge y gradiente analítico).
 ##
-## HISTORIAL DE ESTE FIX:
-## Mi primer intento condicionaba gamma (ventaja de local) a que el
-## partido NO fuera neutral, asumiendo que "neutral" = sin ventaja.
-## Al probarlo con tus 49,493 partidos reales, el accuracy de Dixon-
-## Coles CAYÓ de 0.5632 a 0.5423. Investigué por qué: en tus datos,
-## incluso en partidos marcados "neutral", el equipo etiquetado
-## home_team gana 44.2% / empata 22.4% / pierde 33.4% -- NO es 50/50
-## como esperarías de una etiqueta verdaderamente arbitraria. Hay
-## señal real ahí (probablemente sede/región/afición aunque no sea
-## "cancha propia" en sentido estricto, o convención de cómo la
-## fuente de datos designa "home" en un cruce neutral).
+## Ventaja de local (gamma): se usa SIN condicionar a `neutral` en el
+## entrenamiento. Probé condicionarla a !neutral y el accuracy de
+## Dixon-Coles cayó de 0.5632 a 0.5423: en los partidos marcados
+## "neutral", el equipo etiquetado home_team gana 44.2% / empata
+## 22.4% / pierde 33.4%, así que la etiqueta conserva señal real
+## (sede, región o convención de la fuente).
 ##
-## CONCLUSIÓN: para el ENTRENAMIENTO histórico, es mejor dejar que
-## el modelo use esa señal real (gamma incondicional, como el script
-## original). El problema real no es el entrenamiento -- es que al
-## SERVIR una predicción para un partido hipotético tuyo (ej. "España
-## vs Bélgica" en un cuarto de final que ni siquiera se ha jugado),
-## NO existe un "home_team" real -- es solo el orden en que los
-## elegiste en el dropdown. Ahí SÍ no tiene sentido darle el bonus de
-## gamma a quien listaste primero. Por eso: entrenamiento SIN
-## condicionar (este script, igual al original), pero en
-## predict_match.R SÍ se sigue forzando gamma=0 cuando neutral=TRUE
-## para tus escenarios hipotéticos del Mundial 2026.
+## Al SERVIR un partido hipotético (predict_match.R) sí se fuerza
+## gamma = 0 cuando neutral = TRUE, porque ahí no existe un local
+## real. Detalle en docs/BITACORA_DECISIONES.md.
 ## =============================================================
 suppressMessages({ library(data.table) })
 

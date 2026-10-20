@@ -55,10 +55,12 @@ promedio 0.022 en un diagnóstico de 10 bins) — ver `scripts/09e_calibration_d
 │   ├── plumber.R              # API REST (endpoints /health, /predict)
 │   ├── predict_match.R        # lógica de predicción en vivo
 │   └── Dockerfile             # para desplegar la API
-├── dashboard/
+├── Dashboard/
 │   └── andre_mundial2026.html # dashboard de un solo archivo (sin build step)
 ├── pipeline.R                 # corre todos los scripts en orden
-└── docs/                      # notas de metodología y auditoría
+└── docs/
+    ├── BITACORA_DECISIONES.md # bugs encontrados, fixes y decisiones metodológicas
+    └── API.md                 # cómo levantar, conectar y desplegar la API
 ```
 
 `output/` (modelos entrenados, `.rds`) se genera localmente al correr el
@@ -84,7 +86,7 @@ tiene sentido versionarlos.
    **stacking vía meta-learner (glmnet)** en vez de promedio simple — está
    medido que el stacking es tanto más preciso como mejor calibrado.
 6. **Ventaja de local NO se anula en cancha neutral durante el entrenamiento**
-   (decisión deliberada, no un descuido — ver `docs/` para el detalle):
+   (decisión deliberada, no un descuido — ver [`docs/BITACORA_DECISIONES.md`](docs/BITACORA_DECISIONES.md)):
    probamos anularla y el accuracy empeoró, porque incluso en partidos
    "neutrales" el equipo etiquetado `home_team` en los datos conserva señal
    real. En cambio, al **servir una predicción de un partido hipotético**
@@ -128,7 +130,7 @@ con Render, Railway o Fly.io.
 
 ## Dashboard
 
-`dashboard/index.html` es autocontenido — ábrelo directo en el
+`Dashboard/andre_mundial2026.html` es autocontenido (y se publica en GitHub Pages) — ábrelo directo en el
 navegador, no necesita servidor ni build step. Incluye:
 - Selector de partido con el bracket real del Mundial 2026 (octavos → final,
   incluyendo escenarios hipotéticos para cruces aún no definidos)
@@ -139,6 +141,15 @@ navegador, no necesita servidor ni build step. Incluye:
 - Vista previa móvil real (iframe con viewport propio)
 - Conexión opcional a la API en vivo (arriba) para usar los modelos
   entrenados reales en vez de la heurística Elo→Poisson
+
+## Uso de IA
+
+Usé un asistente de IA (Claude) durante el desarrollo, sobre todo para
+auditar el pipeline, depurar la API y redactar parte del código y la
+documentación. Las decisiones metodológicas y los resultados se validaron
+corriendo el pipeline sobre los datos reales; los errores que esa auditoría
+encontró, y una decisión que revertí tras medirla, están en
+[`docs/BITACORA_DECISIONES.md`](docs/BITACORA_DECISIONES.md).
 
 ## Licencia
 

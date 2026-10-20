@@ -20,7 +20,7 @@ model_dt <- fread(file.path(DATA_DIR, "model_features.csv"))
 model_dt[, date := as.Date(date)]
 
 # Ventana reciente para mantener el MCMC tratable en tiempo razonable
-# (en tu máquina, con más tiempo/cores, puedes usar el dataset completo)
+# (con más tiempo/cores se puede usar el dataset completo)
 WINDOW_FROM <- as.Date("2024-09-01")
 SPLIT_DATE  <- as.Date("2025-10-01")
 
