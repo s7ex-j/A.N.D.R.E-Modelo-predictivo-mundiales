@@ -1,8 +1,7 @@
 ## =============================================================
-## 08_ensemble.R — VERSIÓN CORREGIDA / AMPLIADA
-## Cambios:
-##  1. Incorpora preds_bayes.csv al ensamble (si existe) — antes se
-##     calculaba pero nunca se usaba.
+## 08_ensemble.R
+## Ensamble y stacking (meta-learner glmnet):
+##  1. Incorpora preds_bayes.csv al ensamble (si existe).
 ##  2. Calibración isotónica por modelo ANTES de promediar/stackear
 ##     (mejora Brier/log-loss sin tocar el ranking de accuracy).
 ##  3. Guarda stack_colnames.rds para que la API sepa el orden EXACTO

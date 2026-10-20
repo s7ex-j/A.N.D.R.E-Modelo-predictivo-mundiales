@@ -3,11 +3,10 @@
 ## Deep Learning para clasificación 1X2.
 ##
 ## Este script tiene DOS partes:
-##  (A) Una red neuronal simple con {nnet} que SÍ corre en el sandbox
-##      (sirve como validación rápida del enfoque y como fallback si
-##      no tienes GPU/keras instalado).
-##  (B) El código real de Deep Learning con {keras3}/TensorFlow que
-##      debes correr en tu máquina (requiere: install.packages("keras3");
+##  (A) Una red neuronal simple con {nnet}: es la que entra al
+##      ensamble y corre sin GPU ni dependencias pesadas.
+##  (B) Una red más profunda con {keras3}/TensorFlow, desactivada por
+##      defecto (requiere install.packages("keras3");
 ##      keras3::install_keras()). Es una red más profunda, con dropout
 ##      y batch normalization, pensada para capturar interacciones no
 ##      lineales entre Elo, Dixon-Coles y forma reciente.
@@ -60,8 +59,7 @@ saveRDS(nn_fit, "output/model_nnet.rds")
 saveRDS(list(mu=mu, sd=sdv), "output/nnet_scaling.rds")
 
 ## ---------------------------------------------------------------
-## (B) CÓDIGO PARA TU MÁQUINA: Deep Learning real con keras3
-## (no se ejecuta aquí -- requiere TensorFlow instalado localmente)
+## (B) Deep Learning con keras3 (desactivado: requiere TensorFlow)
 ## ---------------------------------------------------------------
 if (FALSE) {
   library(keras3)
