@@ -6,7 +6,13 @@ neuronal) y un modelo bayesiano jerárquico (Stan/brms), unidos por un
 meta-learner (stacking). Incluye una API en R (`plumber`) y un dashboard
 interactivo de un solo archivo HTML con cuotas de mercado en vivo.
 
-**Autor:** Andre ([@s7ex.j](https://instagram.com/s7ex.j))
+[![Sintaxis R](https://github.com/s7ex-j/A.N.D.R.E-Modelo-predictivo-mundiales/actions/workflows/check-r.yml/badge.svg)](https://github.com/s7ex-j/A.N.D.R.E-Modelo-predictivo-mundiales/actions/workflows/check-r.yml)
+[![Dashboard](https://img.shields.io/badge/dashboard-en%20vivo-2ea44f)](https://s7ex-j.github.io/A.N.D.R.E-Modelo-predictivo-mundiales/)
+[![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
+
+**Dashboard en vivo:** [s7ex-j.github.io/A.N.D.R.E-Modelo-predictivo-mundiales](https://s7ex-j.github.io/A.N.D.R.E-Modelo-predictivo-mundiales/)
+
+**Autor:** Jharol André Vilca Ramos · [ORCID 0009-0009-7897-3439](https://orcid.org/0009-0009-7897-3439) · [@s7ex.j](https://instagram.com/s7ex.j)
 
 ---
 
@@ -130,7 +136,7 @@ con Render, Railway o Fly.io.
 
 ## Dashboard
 
-`Dashboard/andre_mundial2026.html` es autocontenido (y se publica en GitHub Pages) — ábrelo directo en el
+`Dashboard/andre_mundial2026.html` es autocontenido (y se publica en [GitHub Pages](https://s7ex-j.github.io/A.N.D.R.E-Modelo-predictivo-mundiales/)) — ábrelo directo en el
 navegador, no necesita servidor ni build step. Incluye:
 - Selector de partido con el bracket real del Mundial 2026 (octavos → final,
   incluyendo escenarios hipotéticos para cruces aún no definidos)
