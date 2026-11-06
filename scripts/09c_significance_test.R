@@ -15,6 +15,11 @@ set.seed(42)
 
 DATA_DIR <- "data"
 ens <- fread(file.path(DATA_DIR, "ensemble_predictions.csv"))
+
+## Mismo holdout que 09_evaluation.R: el stacking y la calibración se
+## ajustan sobre el primer 70% del test, así que solo el 30% final es
+## fuera de muestra para todos los modelos.
+if ("stack_split" %in% names(ens)) ens <- ens[stack_split == "meta_test"]
 results_clean <- fread(file.path(DATA_DIR, "results_clean.csv"))
 results_clean[, date := as.Date(date)]
 
