@@ -10,6 +10,8 @@ interactivo de un solo archivo HTML con cuotas de mercado en vivo.
 [![Dashboard](https://img.shields.io/badge/dashboard-en%20vivo-2ea44f)](https://s7ex-j.github.io/A.N.D.R.E-Modelo-predictivo-mundiales/)
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
 
+<sub>**Español** · [English](README.en.md)</sub>
+
 **Dashboard en vivo:** [s7ex-j.github.io/A.N.D.R.E-Modelo-predictivo-mundiales](https://s7ex-j.github.io/A.N.D.R.E-Modelo-predictivo-mundiales/)
 
 **Autor:** Jharol André Vilca Ramos · [ORCID 0009-0009-7897-3439](https://orcid.org/0009-0009-7897-3439) · [@s7ex.j](https://instagram.com/s7ex.j)
@@ -17,6 +19,13 @@ interactivo de un solo archivo HTML con cuotas de mercado en vivo.
 ---
 
 ## Resultados (test set: partidos desde 2023-01-01, n=3,686)
+
+> **Cifras en revisión.** En esta tabla el stacking se evaluó solo sobre el
+> 30% final del test (el tramo que no usó su meta-learner) y el resto de
+> modelos sobre los 3,686 partidos, así que no comparan la misma muestra.
+> La corrección, que evalúa todos sobre el mismo holdout, está en
+> [#3](https://github.com/s7ex-j/A.N.D.R.E-Modelo-predictivo-mundiales/pull/3)
+> y la tabla se actualizará al volver a correr el pipeline.
 
 | Modelo | Accuracy | Log-loss | Brier | RPS |
 |---|---|---|---|---|
@@ -89,8 +98,7 @@ tiene sentido versionarlos.
 4. **Split temporal, nunca aleatorio.** Todo el test set es posterior a
    todo el train set.
 5. **Calibración isotónica** por modelo antes de promediar/stackear, y
-   **stacking vía meta-learner (glmnet)** en vez de promedio simple — está
-   medido que el stacking es tanto más preciso como mejor calibrado.
+   **stacking vía meta-learner (glmnet)** en vez de promedio simple.
 6. **Ventaja de local NO se anula en cancha neutral durante el entrenamiento**
    (decisión deliberada, no un descuido — ver [`docs/BITACORA_DECISIONES.md`](docs/BITACORA_DECISIONES.md)):
    probamos anularla y el accuracy empeoró, porque incluso en partidos
