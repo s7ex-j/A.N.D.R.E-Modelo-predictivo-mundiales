@@ -14,6 +14,18 @@ suppressMessages({ library(data.table) })
 DATA_DIR <- "data"
 ens <- fread(file.path(DATA_DIR, "ensemble_predictions.csv"))
 
+## Holdout común: el meta-learner del stacking y la calibración isotónica
+## se ajustan sobre el primer 70% del test set (ver 08_ensemble.R). Para que
+## la comparación sea justa, TODOS los modelos se evalúan sobre el mismo 30%
+## final ("meta_test"), que ninguno de ellos vio al ajustarse.
+if ("stack_split" %in% names(ens)) {
+  ajuste  <- ens[stack_split == "meta_train"]
+  holdout <- ens[stack_split == "meta_test"]
+} else {
+  ajuste  <- ens
+  holdout <- ens
+}
+
 rps <- function(p_away, p_draw, p_home, result) {
   # Orden natural del resultado: Away(0) - Draw(1) - Home(2)
   actual <- matrix(0, nrow = length(result), ncol = 3)
@@ -55,23 +67,37 @@ evaluate_model <- function(prefix, dat = ens) {
 }
 
 # Baseline "naive": siempre la frecuencia histórica global (H/D/A) -- referencia mínima
-base_rates <- prop.table(table(ens$result))[c("A","D","H")]
+## (frecuencias tomadas del tramo de ajuste, no del holdout, para no usar
+##  los resultados que se van a evaluar)
+base_rates <- prop.table(table(ajuste$result))[c("A","D","H")]
 ens[, naive_p_away := base_rates["A"]]
 ens[, naive_p_draw := base_rates["D"]]
 ens[, naive_p_home := base_rates["H"]]
+holdout <- if ("stack_split" %in% names(ens)) ens[stack_split == "meta_test"] else ens
 
 results_table <- rbindlist(list(
+  evaluate_model("naive", holdout),
+  evaluate_model("dc",    holdout),
+  evaluate_model("nn",    holdout),
+  if ("xgb_p_home" %in% names(ens)) evaluate_model("xgb", holdout),
+  evaluate_model("avg",   holdout),
+  if ("stack_p_home" %in% names(ens)) evaluate_model("stack", holdout)
+), fill = TRUE)
+
+## Referencia secundaria: modelos base sobre el test set completo (desde
+## 2023). No incluye avg ni stack, que se ajustan sobre parte de ese tramo.
+full_table <- rbindlist(list(
   evaluate_model("naive"),
   evaluate_model("dc"),
   evaluate_model("nn"),
-  if ("xgb_p_home" %in% names(ens)) evaluate_model("xgb"),
-  evaluate_model("avg"),
-  if ("stack_p_home" %in% names(ens))
-    evaluate_model("stack", dat = ens[stack_split == "meta_test"])  # solo holdout real
+  if ("xgb_p_home" %in% names(ens)) evaluate_model("xgb")
 ), fill = TRUE)
 
-cat("=== Comparación de modelos (test set, partidos desde 2023) ===\n")
+cat("=== Comparación de modelos (holdout común, n =", nrow(holdout), ",",
+    as.character(min(holdout$date)), "a", as.character(max(holdout$date)), ") ===\n")
 print(results_table)
+cat("\n=== Referencia: modelos base sobre el test completo (n =", nrow(ens), ") ===\n")
+print(full_table)
 cat("\nNota: menor RPS / log_loss / brier = mejor. Mayor accuracy = mejor.\n")
 cat("RPS es la métrica más citada en la literatura académica de forecasting\n")
 cat("de fútbol (Constantinou & Fenton, 2012) porque también premia acertar\n")
@@ -79,3 +105,4 @@ cat("'casi' (ej. predecir empate y que gane el favorito por 1) frente a un\n")
 cat("fallo total (predecir empate y perder goleado el favorito).\n")
 
 fwrite(results_table, file.path(DATA_DIR, "evaluation_summary.csv"))
+fwrite(full_table,    file.path(DATA_DIR, "evaluation_summary_full_test.csv"))
