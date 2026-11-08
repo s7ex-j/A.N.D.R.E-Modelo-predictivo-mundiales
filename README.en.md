@@ -20,32 +20,40 @@ interactive HTML dashboard with live market odds.
 
 ---
 
-## Results (test set: matches since 2023-01-01, n=3,686)
+## Results (common holdout: 1,230 matches, 2025-09-09 to 2026-10-06)
 
-> **Figures under review.** In this table the stacking model was evaluated only
-> on the last 30% of the test set (the stretch its meta-learner did not use),
-> while the other models were evaluated on all 3,686 matches, so they are not
-> compared on the same sample. The fix, which evaluates every model on the same
-> holdout, is in
-> [#3](https://github.com/s7ex-j/A.N.D.R.E-Modelo-predictivo-mundiales/pull/3)
-> and the table will be updated once the pipeline is re-run.
+Every model is evaluated on **the same matches**: the last 30% of the test set,
+which neither the isotonic calibration nor the stacking meta-learner used for
+fitting. Data from `martj42/international_results` up to 2026-10-06.
 
 | Model | Accuracy | Log-loss | Brier | RPS |
 |---|---|---|---|---|
-| Naive (historical frequency) | 47.3% | 1.053 | 0.635 | 0.229 |
-| Dixon-Coles | 56.3% | 0.936 | 0.554 | 0.190 |
-| Neural network | 59.3% | 0.873 | 0.513 | 0.170 |
-| XGBoost | 60.0% | 0.861 | 0.506 | 0.168 |
-| Simple average (calibrated) | 60.0% | 0.888 | 0.521 | 0.175 |
-| **Stacking (meta-learner)** | **62.0%** | **0.836** | **0.489** | **0.160** |
+| Naive (historical frequency) | 47.9% | 1.048 | 0.632 | 0.230 |
+| Dixon-Coles | 55.3% | 0.945 | 0.561 | 0.194 |
+| Neural network | 60.6% | 0.870 | 0.509 | 0.170 |
+| XGBoost | 61.4% | 0.852 | 0.500 | 0.167 |
+| Simple average (calibrated) | 61.3% | 0.884 | 0.519 | 0.176 |
+| Stacking (meta-learner) | 60.7% | 0.854 | 0.500 | 0.166 |
 
-On **World Cup 2026** matches specifically (n=88, up to the quarterfinals):
-stacking 62.5% accuracy, RPS 0.167 — significantly better than the simple
-average (bootstrap, p<0.05), although against XGBoost or the neural network
-alone the difference is not yet conclusive with this number of matches.
+**Reading:** XGBoost, the neural network, the average and stacking are
+**statistically tied** (paired bootstrap, 5,000 resamples: no difference between
+them is significant at 95%). All of them clearly beat Dixon-Coles and the naive
+baseline. Stacking has the best RPS (0.166) but does not improve on XGBoost's
+accuracy alone.
 
-Stacking is also the **best calibrated** of the 5 models (mean gap 0.022 in a
-10-bin diagnostic) — see `scripts/09e_calibration_diagnostics.R`.
+On **World Cup 2026** matches (104 matches, the full tournament): stacking and
+the neural network 65.4%, XGBoost 64.4%, average 63.5%, Dixon-Coles 52.9%.
+Stacking has the best RPS (0.157) and is significantly better only than
+Dixon-Coles; against the others the difference is not conclusive with 104 matches.
+
+Calibration ("home win", 10 bins, common holdout): the neural network is the best
+calibrated (mean gap 0.019), followed by XGBoost (0.028) and stacking (0.030) —
+see `scripts/09e_calibration_diagnostics.R`.
+
+> Earlier versions of this README reported stacking at 62.0% vs. 60.0% for
+> XGBoost. That comparison used different samples (stacking on the last 30%, the
+> rest on the whole test set) and was not valid; details in the
+> [decision log](docs/BITACORA_DECISIONES.md#5-el-stacking-no-era-el-mejor-comparaba-muestras-distintas) (in Spanish).
 
 ## Repository structure
 

@@ -16,7 +16,7 @@ data/results_dixoncoles.csv
 data/model_features.csv
 data/preds_*.csv
 data/ensemble_predictions.csv
-data/evaluation_summary.csv
+data/evaluation_summary*.csv
 data/evaluation_worldcup.csv
 data/significance_*.csv
 data/calibration_*.csv

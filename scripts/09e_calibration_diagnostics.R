@@ -16,6 +16,11 @@ suppressMessages({ library(data.table) })
 DATA_DIR <- "data"
 ens <- fread(file.path(DATA_DIR, "ensemble_predictions.csv"))
 
+## Mismo holdout que 09_evaluation.R: el stacking y la calibración se
+## ajustan sobre el primer 70% del test, así que solo el 30% final es
+## fuera de muestra para todos los modelos.
+if ("stack_split" %in% names(ens)) ens <- ens[stack_split == "meta_test"]
+
 modelos_disponibles <- unique(gsub("_p_(home|draw|away)$", "",
                           grep("_p_home$", names(ens), value = TRUE)))
 
@@ -37,7 +42,7 @@ reliability_table <- function(dat, prefix, n_bins = 10) {
   agg
 }
 
-cat("=== Calibración de 'gana local' por modelo (10 bins, test completo) ===\n\n")
+cat("=== Calibración de 'gana local' por modelo (10 bins, holdout común) ===\n\n")
 all_tables <- list()
 for (m in modelos_disponibles) {
   rt <- reliability_table(ens, m)

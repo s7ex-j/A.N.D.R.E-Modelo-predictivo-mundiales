@@ -106,11 +106,36 @@ Corrida de validación con todos los fixes, antes de sumar XGBoost:
 | Ensamble (promedio, calibrado) | 59.4% | 0.182 |
 | Stacking | 60.3% | 0.164 |
 
-Con XGBoost incluido el stacking sube a 62.0% (ver README).
+Con XGBoost incluido el stacking subía a 62.0%; esa cifra resultó no ser comparable (ver §5).
 
 ---
 
-## 5. Roadmap
+## 5. El stacking no era el mejor: comparaba muestras distintas
+
+El meta-learner del stacking y la calibración isotónica se ajustan sobre el
+primer 70% del test set, así que solo el 30% final está fuera de muestra para
+todos los modelos. La tabla que publiqué evaluaba el stacking en ese 30%
+(n = 1,106) y al resto en todo el test (n = 3,686): **comparaba muestras
+distintas**, y con eso el stacking parecía el mejor (62.0% vs. 60.0% de XGBoost).
+
+- **Fix (#3):** `09` a `09e` evalúan todos los modelos sobre el mismo holdout
+  (`stack_split == "meta_test"`), y el baseline naive toma sus frecuencias del
+  tramo de ajuste, no del que evalúa.
+- **Resultado** (misma corrida, datos hasta oct-2026, n = 1,230): XGBoost 61.4%,
+  promedio 61.3%, stacking 60.7%, red neuronal 60.6%. Ninguna diferencia entre
+  esos cuatro es significativa (bootstrap pareado, 5,000 remuestreos).
+- **También cae** la afirmación de que el stacking era el mejor calibrado: en el
+  holdout común lo es la red neuronal (brecha 0.019 vs. 0.030).
+- **Lección:** comparar modelos siempre sobre la misma muestra, y que ninguno la
+  haya visto al ajustarse. Un número mejor en una muestra distinta no prueba nada.
+
+---
+
+## 6. Roadmap
+
+- **Convergencia del modelo bayesiano:** con 1 cadena y 400 iteraciones, el
+  intercepto queda con Rhat 1.07 y ESS 24 (lo deseable es Rhat < 1.01). Usar 4
+  cadenas y más iteraciones antes de sacar conclusiones de ese modelo.
 
 - **Cuotas de cierre como feature:** en la literatura son el predictor
   individual más fuerte para fútbol (football-data.co.uk las tiene para
