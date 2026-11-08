@@ -1,0 +1,72 @@
+name: Actualizar datos
+
+# Cada lunes descarga los resultados nuevos de martj42/international_results,
+# recalcula el estado de cada selección (Elo, Dixon-Coles, forma) y publica
+# Dashboard/team_state.json, que es lo que lee el dashboard en vivo.
+#
+# No reentrena los modelos ni cambia las métricas del README: esas salen de
+# correr pipeline.R completo y quedan fijadas en cada release.
+
+on:
+  schedule:
+    - cron: "17 11 * * 1"   # lunes 11:17 UTC (6:17 en Lima)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-datos
+  cancel-in-progress: false
+
+env:
+  # renv.lock fija las versiones para correr el proyecto en una PC; en CI se
+  # instalan los binarios actuales y no hace falta activar la librería de renv.
+  RENV_ACTIVATE_PROJECT: "false"
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descargar resultados nuevos
+        id: datos
+        run: |
+          base=https://raw.githubusercontent.com/martj42/international_results/master
+          for f in results shootouts goalscorers; do
+            curl -fsSL "$base/$f.csv" -o "data/$f.csv"
+          done
+          if git diff --quiet -- data/; then
+            echo "Sin partidos nuevos: no hay nada que actualizar."
+            echo "cambios=no" >> "$GITHUB_OUTPUT"
+          else
+            git diff --stat -- data/
+            echo "cambios=si" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: r-lib/actions/setup-r@v2
+        if: steps.datos.outputs.cambios == 'si'
+        with:
+          use-public-rspm: true
+
+      - name: Instalar paquetes
+        if: steps.datos.outputs.cambios == 'si'
+        run: Rscript -e 'install.packages(c("data.table","dplyr","lubridate","jsonlite"))'
+
+      - name: Recalcular estado de las selecciones
+        if: steps.datos.outputs.cambios == 'si'
+        run: |
+          mkdir -p output
+          Rscript -e 'source("scripts/01_data_prep.R", local = new.env())'
+          Rscript -e 'source("scripts/10_build_team_state.R", local = new.env())'
+
+      - name: Publicar
+        if: steps.datos.outputs.cambios == 'si'
+        run: |
+          git add data/results.csv data/shootouts.csv data/goalscorers.csv Dashboard/team_state.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "data: resultados y estado de selecciones al $(date -u +%Y-%m-%d)"
+          git push

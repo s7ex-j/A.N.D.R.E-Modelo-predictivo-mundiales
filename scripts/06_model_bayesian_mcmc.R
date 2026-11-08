@@ -7,15 +7,19 @@
 ## attack_i, defense_i ~ Normal(mu, sigma) con mu/sigma estimados
 ## de los datos. Salida: goles esperados con INTERVALOS DE CREDIBILIDAD
 ## (no solo un punto), y probabilidades 1X2 vía simulación posterior.
+##
+## v2: 4 cadenas x 3000 iteraciones (antes 1 x 400, que no convergía:
+## Rhat 1.07 y ESS 24 en el intercepto). Al final se revisan Rhat y ESS
+## de TODOS los parámetros y se avisa si alguno no pasa el umbral.
+## No entra al ensamble (cubre solo una ventana del test): se reporta aparte.
 ## =============================================================
 suppressMessages({
   library(data.table)
   library(brms)
   library(rstan)
 })
-options(mc.cores = parallel::detectCores())
-
-DATA_DIR <- "data"
+source("scripts/00_config.R")
+options(mc.cores = min(4, parallel::detectCores()))
 model_dt <- fread(file.path(DATA_DIR, "model_features.csv"))
 model_dt[, date := as.Date(date)]
 
@@ -53,16 +57,30 @@ priors <- c(
   prior(normal(0, 0.6), class = "sd", group = "opponent")
 )
 
+MCMC_CHAINS <- 4
+MCMC_ITER   <- 3000   # la mitad es warmup
 t0 <- Sys.time()
 fit_bayes <- brm(
   goals ~ is_home + (1 | team) + (1 | opponent),
   data = train_long, family = poisson(),
   prior = priors,
-  chains = 1, iter = 400, warmup = 200, seed = 42,
+  chains = MCMC_CHAINS, iter = MCMC_ITER, warmup = MCMC_ITER / 2, seed = 42,
   refresh = 0, backend = "rstan"
 )
 cat("Tiempo de ajuste MCMC:", round(as.numeric(Sys.time()-t0, units="mins"),2), "min\n")
 print(summary(fit_bayes)$fixed)
+
+## ---- Diagnóstico de convergencia (todos los parámetros) ----
+## Umbrales habituales: Rhat < 1.01 y ESS (bulk y tail) > 400.
+rh  <- brms::rhat(fit_bayes)
+ess <- brms::neff_ratio(fit_bayes) * (MCMC_CHAINS * MCMC_ITER / 2)   # muestras post-warmup totales
+diag <- data.table(parametro = names(rh), rhat = round(rh, 4), ess_aprox = round(ess[names(rh)]))
+n_bad_rhat <- sum(diag$rhat >= 1.01, na.rm = TRUE)
+cat("Convergencia: Rhat máximo =", round(max(rh, na.rm = TRUE), 4),
+    "| ESS mínimo aprox. =", round(min(ess, na.rm = TRUE)),
+    "| parámetros con Rhat >= 1.01:", n_bad_rhat, "de", nrow(diag), "\n")
+if (n_bad_rhat > 0) cat("AVISO: el MCMC no convergió del todo; no saques conclusiones de este modelo.\n")
+fwrite(diag, file.path(DATA_DIR, "bayes_diagnostics.csv"))
 
 ## ---------------------------------------------------------------
 ## Predicción posterior para partidos de test: simulamos S=2000
@@ -85,6 +103,7 @@ predict_all <- function(test_dt, n_draws = 200) {
 }
 
 cat("\nPrediciendo", nrow(test), "partidos de test con incertidumbre posterior...\n")
+set.seed(42)
 preds <- predict_all(test)
 preds <- cbind(test[, .(match_id, date, home_team, away_team, result)], preds)
 setnames(preds, c("p_home","p_draw","p_away","lambda_home","lambda_away",
@@ -97,5 +116,5 @@ pred_class <- fifelse(preds$bayes_p_home >= preds$bayes_p_away & preds$bayes_p_h
 cat("Accuracy Bayes MCMC (test):", round(mean(pred_class == preds$result), 4), "\n")
 
 fwrite(preds, file.path(DATA_DIR, "preds_bayes.csv"))
-saveRDS(fit_bayes, "output/model_bayes_mcmc.rds")
+saveRDS(fit_bayes, file.path(OUT_DIR, "model_bayes_mcmc.rds"))
 cat("Predicciones bayesianas guardadas en data/preds_bayes.csv\n")

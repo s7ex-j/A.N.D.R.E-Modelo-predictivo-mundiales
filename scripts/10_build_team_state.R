@@ -10,6 +10,8 @@
 ## Genera:
 ##   output/team_state.rds   (data.table: 1 fila por selección)
 ##   output/dc_global.rds    (gamma y rho del último ajuste Dixon-Coles)
+##   Dashboard/team_state.json (lo mismo, para el dashboard en vivo: Elo,
+##                              ataque/defensa Dixon-Coles y forma por selección)
 ## =============================================================
 suppressMessages({ library(data.table) })
 
@@ -111,8 +113,12 @@ par0 <- c(rep(0,nT), rep(0,nT), 0.2, 0.0)
 opt <- optim(par0, neg_loglik, gr = neg_grad, dat = train_dat, method = "BFGS",
              control = list(maxit = 300, reltol = 1e-9))
 
-att <- opt$par[1:nT] - mean(opt$par[1:nT])
-def <- opt$par[(nT+1):(2*nT)]
+## Se centra el ataque en 0 para que sea legible, y se suma lo mismo a la
+## defensa: lambda = exp(att + def + gamma) queda idéntico. (Antes solo se
+## centraba el ataque, y eso bajaba todos los goles esperados ~4%.)
+att_shift <- mean(opt$par[1:nT])
+att <- opt$par[1:nT] - att_shift
+def <- opt$par[(nT+1):(2*nT)] + att_shift
 gamma <- opt$par[2*nT+1]
 rho   <- opt$par[2*nT+2]
 dc_now <- data.table(team = teams, att = att, def = def)
@@ -146,6 +152,25 @@ team_state[is.na(def), def := 0]
 saveRDS(team_state, file.path(OUT_DIR, "team_state.rds"))
 saveRDS(list(gamma = gamma, rho = rho, snapshot_date = TODAY),
         file.path(OUT_DIR, "dc_global.rds"))
+
+## ---- JSON para el dashboard (lo lee al cargar; si no está, usa sus presets) ----
+if (requireNamespace("jsonlite", quietly = TRUE)) {
+  num_or_null <- function(x, d) if (is.na(x)) NULL else round(x, d)
+  teams_json <- setNames(lapply(seq_len(nrow(team_state)), function(i) {
+    r <- team_state[i]
+    list(elo = round(r$elo), att = round(r$att, 4), def = round(r$def, 4),
+         form_pts = num_or_null(r$form_pts, 2),
+         last_match = if (is.na(r$last_match_date)) NULL else as.character(r$last_match_date))
+  }), enc2utf8(team_state$team))
+  dir.create("Dashboard", showWarnings = FALSE)
+  jsonlite::write_json(
+    list(snapshot_date = as.character(TODAY), last_result = as.character(max(results$date)),
+         gamma = round(gamma, 4), rho = round(rho, 4), teams = teams_json),
+    file.path("Dashboard", "team_state.json"), auto_unbox = TRUE, pretty = FALSE, digits = NA, null = "null")
+  cat("Dashboard/team_state.json guardado (", length(teams_json), "selecciones ).\n")
+} else {
+  cat("jsonlite no está instalado: se omite Dashboard/team_state.json.\n")
+}
 
 cat("team_state.rds guardado —", nrow(team_state), "selecciones.\n")
 cat("dc_global.rds guardado — gamma:", round(gamma,3), " rho:", round(rho,3), "\n")

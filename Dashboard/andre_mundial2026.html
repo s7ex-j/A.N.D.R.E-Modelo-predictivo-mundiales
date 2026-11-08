@@ -318,9 +318,9 @@
       </div>
     </div>
     <div class="headline-stats">
-      <div class="hstat"><div class="v" style="color:var(--green)">60.7%</div><div class="l">Accuracy stack (holdout)</div></div>
-      <div class="hstat"><div class="v">0.166</div><div class="l">RPS stack</div></div>
-      <div class="hstat"><div class="v">1,230</div><div class="l">Partidos out-of-sample</div></div>
+      <div class="hstat"><div class="v" style="color:var(--green)">60.6%</div><div class="l">Accuracy stack (test)</div></div>
+      <div class="hstat"><div class="v">0.169</div><div class="l">RPS stack</div></div>
+      <div class="hstat"><div class="v">4,098</div><div class="l">Partidos out-of-sample</div></div>
       <div class="device-toggle">
         <button class="device-btn active" id="btnMobile" title="Vista m&oacute;vil">&#128241; Ver en m&oacute;vil</button>
       </div>
@@ -564,40 +564,41 @@
     <div class="panel">
       <p class="panel-title">Backtest del ensamble (2023&ndash;2026, walk-forward)</p>
       <div class="backtest-grid">
-        <div class="bt-cell"><div class="m">Naive</div><div class="a">47.9%</div><div class="n">RPS .230</div></div>
-        <div class="bt-cell"><div class="m">Dixon-C.</div><div class="a">55.3%</div><div class="n">RPS .194</div></div>
-        <div class="bt-cell"><div class="m">Red neur.</div><div class="a">60.6%</div><div class="n">RPS .170</div></div>
-        <div class="bt-cell"><div class="m">XGBoost</div><div class="a">61.4%</div><div class="n">RPS .167</div></div>
-        <div class="bt-cell"><div class="m">Promedio</div><div class="a">61.3%</div><div class="n">RPS .176</div></div>
-        <div class="bt-cell hi"><div class="m">Stacking (en uso)</div><div class="a hi">60.7%</div><div class="n">RPS .166</div></div>
+        <div class="bt-cell"><div class="m">Naive</div><div class="a">47.2%</div><div class="n">RPS .230</div></div>
+        <div class="bt-cell"><div class="m">Dixon-C.</div><div class="a">56.0%</div><div class="n">RPS .191</div></div>
+        <div class="bt-cell"><div class="m">Red neur.</div><div class="a">59.6%</div><div class="n">RPS .171</div></div>
+        <div class="bt-cell"><div class="m">XGBoost</div><div class="a">60.4%</div><div class="n">RPS .169</div></div>
+        <div class="bt-cell"><div class="m">Promedio</div><div class="a">60.1%</div><div class="n">RPS .171</div></div>
+        <div class="bt-cell hi"><div class="m">Stacking (en uso)</div><div class="a hi">60.6%</div><div class="n">RPS .169</div></div>
       </div>
-      <div class="note">Métricas reales de <span style="color:var(--muted)">09_evaluation.R</span> sobre el holdout común (n=1,230, sep-2025 a oct-2026): todos los modelos evaluados en los mismos partidos, que ninguno usó para ajustarse. Bootstrap (5,000 remuestreos): XGBoost, red neuronal, promedio y stacking quedan <b style="color:var(--green)">estad&iacute;sticamente empatados</b>; todos superan a Dixon-Coles.</div>
+      <div class="note">Métricas reales de <span style="color:var(--muted)">09_evaluation.R</span> sobre el test completo (n=4,098, ene-2023 a oct-2026), que ningún modelo usó para ajustarse: la calibración y el stacking se entrenan con predicciones out-of-fold de 2019&ndash;2022. Bootstrap pareado (5,000 remuestreos): stacking y XGBoost quedan <b style="color:var(--green)">estad&iacute;sticamente empatados</b>; todos superan a Dixon-Coles.</div>
     </div>
 
     <div class="panel">
       <p class="panel-title">Top Elo actual <span style="font-weight:400;color:var(--muted2);text-transform:none;">(en vivo, desde los datos cargados)</span></p>
       <div id="eloRankingWrap"></div>
+      <div class="note" id="modelStateNote">Cargando ratings del modelo…</div>
     </div>
 
     <div class="panel">
       <p class="panel-title">Backtest del ensamble &mdash; accuracy real</p>
       <div class="chart-box"><canvas id="chartAccuracy"></canvas></div>
       <div class="legend" style="margin-top:10px;">
-        <div class="legend-item"><div class="dot" style="background:#5b8def"></div>Holdout com&uacute;n, todos los torneos (n=1,230)</div>
+        <div class="legend-item"><div class="dot" style="background:#5b8def"></div>Test completo, todos los torneos (n=4,098)</div>
         <div class="legend-item"><div class="dot" style="background:#3ecf8e"></div>Solo Mundial 2026 (n=104)</div>
       </div>
-      <div class="note">Datos reales de <span style="color:var(--muted)">09_evaluation.R</span> y <span style="color:var(--muted)">09b_evaluation_worldcup.R</span> sobre el dataset completo (1872&ndash;2026, 49,940 partidos) con XGBoost y bayesiano incluidos.</div>
+      <div class="note">Datos reales de <span style="color:var(--muted)">09_evaluation.R</span> y <span style="color:var(--muted)">09b_evaluation_worldcup.R</span> sobre el dataset completo (1872&ndash;2026, 49,940 partidos). El bayesiano se eval&uacute;a aparte (cubre solo oct&ndash;dic 2025).</div>
     </div>
 
     <div class="panel">
       <p class="panel-title">Calibraci&oacute;n del stacking</p>
       <div class="chart-box"><canvas id="chartCalibration"></canvas></div>
-      <div class="note">Agrupa partidos por probabilidad predicha de "gana local" (10 grupos, holdout com&uacute;n) vs. frecuencia real. L&iacute;nea punteada = calibraci&oacute;n perfecta. Brecha promedio del stacking: <b style="color:var(--green)">0.030</b> (red neuronal 0.019, promedio simple 0.071). Una brecha baja significa que un 60% predicho se cumple cerca del 60% de las veces.</div>
+      <div class="note">Agrupa partidos por probabilidad predicha de "gana local" (10 grupos, test completo) vs. frecuencia real. L&iacute;nea punteada = calibraci&oacute;n perfecta. Brecha promedio del stacking: <b style="color:var(--green)">0.027</b> (red neuronal 0.018, XGBoost 0.027). Una brecha baja significa que un 60% predicho se cumple cerca del 60% de las veces.</div>
     </div>
   </div>
 
   <div class="footnote">
-    <b>Metodología:</b> Elo (ventaja local +60, K din&aacute;mico por importancia, estilo eloratings.net) &rarr; Dixon-Coles Poisson bivariado con decaimiento temporal y refit trimestral walk-forward &rarr; features de forma reciente, descanso y head-to-head &rarr; XGBoost (clasificaci&oacute;n 1X2 + regresi&oacute;n Poisson de goles) + red neuronal + bayesiano jer&aacute;rquico MCMC &rarr; meta-learner (regresi&oacute;n multinomial glmnet) sobre las probabilidades de los modelos base. Todo el pipeline es walk-forward (nunca usa informaci&oacute;n futura). Entrenado y evaluado sobre el dataset internacional de resultados 1872&ndash;2026 (49,940 partidos).<br>
+    <b>Metodología:</b> Elo (ventaja local +60, K din&aacute;mico por importancia, estilo eloratings.net) &rarr; Dixon-Coles Poisson bivariado con decaimiento temporal y refit trimestral walk-forward &rarr; features de forma reciente, descanso y head-to-head &rarr; XGBoost (clasificaci&oacute;n 1X2 + regresi&oacute;n Poisson de goles) + red neuronal &rarr; calibraci&oacute;n isot&oacute;nica y meta-learner (regresi&oacute;n multinomial glmnet) ajustados con predicciones out-of-fold 2019&ndash;2022. Bayesiano jer&aacute;rquico MCMC como an&aacute;lisis aparte. Todo el pipeline es walk-forward (nunca usa informaci&oacute;n futura). Entrenado y evaluado sobre el dataset internacional de resultados 1872&ndash;2026 (49,940 partidos).<br>
     El bracket (cuartos, semis, final) refleja la estructura real del Mundial 2026 conocida al 6&ndash;7 de julio de 2026: octavos de Marruecos, Francia, Noruega e Inglaterra ya definidos; Espa&ntilde;a/Portugal, B&eacute;lgica/USA, Egipto/Argentina y Suiza/Colombia todav&iacute;a por resolverse. Los cruces "por definir" son escenarios hipot&eacute;ticos v&aacute;lidos seg&uacute;n el bracket, no predicciones de qui&eacute;n avanzar&aacute;.<br>
     Esta herramienta es un simulador informativo para explorar tu propio modelo frente a cuotas de mercado. No es asesor&iacute;a financiera ni garant&iacute;a de resultados; el f&uacute;tbol tiene varianza alta incluso con buena calibraci&oacute;n. Apostar conlleva riesgo real de p&eacute;rdida.
     <div class="credit">
@@ -617,7 +618,9 @@
 
 <script>
 // ---------------------------------------------------------------
-// Elo presets — approximate, early July 2026 (editable in UI)
+// Elo presets — respaldo aproximado (julio 2026). Al cargar, el dashboard
+// intenta leer team_state.json (generado por scripts/10_build_team_state.R)
+// y reemplaza estos valores por los del modelo. Editables en la UI.
 // ---------------------------------------------------------------
 const ELO = {
   "Spain":2159, "Argentina":2151, "France":2134, "England":2046, "Brazil":2031,
@@ -905,6 +908,42 @@ document.querySelectorAll('#eloHome,#eloAway,#neutral,#rho,#importance,#featured
 
 function fmtPct(x){ return (x*100).toFixed(1) + '%'; }
 
+// ---------------------------------------------------------------
+// Estado del modelo (team_state.json): Elo y ataque/defensa Dixon-Coles
+// ---------------------------------------------------------------
+let MODEL_STATE = null;
+
+// Si las dos selecciones están en el JSON y el Elo no se editó a mano,
+// los goles esperados salen del Dixon-Coles ajustado por el pipeline
+// (mismo cálculo que api/predict_match.R). Si no, heurística Elo→Poisson.
+function modelLambdas(home, away, eloHome, eloAway, neutral){
+  if (!MODEL_STATE) return null;
+  const th = MODEL_STATE.teams[home], ta = MODEL_STATE.teams[away];
+  if (!th || !ta) return null;
+  if (Math.round(eloHome) !== th.elo || Math.round(eloAway) !== ta.elo) return null;
+  const g = neutral ? 0 : MODEL_STATE.gamma;
+  const lh = Math.exp(th.att + ta.def + g), la = Math.exp(ta.att + th.def);
+  return [Math.max(0.1, Math.min(6, lh)), Math.max(0.1, Math.min(6, la))];
+}
+
+async function loadModelState(){
+  const note = document.getElementById('modelStateNote');
+  try {
+    const resp = await fetch('team_state.json', {cache: 'no-store'});
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    MODEL_STATE = await resp.json();
+    Object.entries(MODEL_STATE.teams).forEach(([team, s]) => { ELO[team] = s.elo; });
+    syncEloFromTeam(homeSel, eloHomeInput);
+    syncEloFromTeam(awaySel, eloAwayInput);
+    renderEloRanking();
+    if (note) note.textContent = 'Ratings del modelo con resultados hasta el ' + MODEL_STATE.last_result +
+      '. Goles esperados: Dixon-Coles del pipeline (si editas un Elo, se usa la heurística Elo→Poisson).';
+    recalcAll();
+  } catch (e) {
+    if (note) note.textContent = 'No se pudo cargar team_state.json: se usan los Elo de respaldo (julio 2026) y la heurística Elo→Poisson.';
+  }
+}
+
 function computeLocal(){
   const eloHome = parseFloat(eloHomeInput.value) || 1500;
   const eloAway = parseFloat(eloAwayInput.value) || 1500;
@@ -912,7 +951,8 @@ function computeLocal(){
   const importance = parseFloat(document.getElementById('importance').value);
   let rho = parseFloat(document.getElementById('rho').value);
   if (isNaN(rho)) rho = -0.08;
-  const [lh, la] = estimateLambdas(eloHome, eloAway, neutral, importance);
+  const [lh, la] = modelLambdas(homeSel.value, awaySel.value, eloHome, eloAway, neutral)
+                   || estimateLambdas(eloHome, eloAway, neutral, importance);
   const probs = dcProbs(lh, la, rho);
   return {lh, la, probs};
 }
@@ -1125,13 +1165,13 @@ try {
       labels: ['Naive','Dixon-Coles','Red neuronal','XGBoost','Promedio','Stacking'],
       datasets: [
         {
-          label: 'Holdout común',
-          data: [47.89, 55.28, 60.57, 61.38, 61.30, 60.73],
+          label: 'Test completo',
+          data: [47.22, 55.95, 59.59, 60.42, 60.08, 60.61],
           backgroundColor: CHART_COLORS.blue, borderRadius: 3, barPercentage: 0.65
         },
         {
           label: 'Solo Mundial 2026',
-          data: [null, 52.88, 65.38, 64.42, 63.46, 65.38],
+          data: [null, 51.92, 65.38, 66.35, 65.38, 65.38],
           backgroundColor: CHART_COLORS.green, borderRadius: 3, barPercentage: 0.65
         }
       ]
@@ -1151,17 +1191,17 @@ try {
   new Chart(document.getElementById('chartCalibration'), {
     type: 'line',
     data: {
-      labels: ['9.3','19.1','27.1','33.9','42.0','49.7','58.6','68.9','79.0','87.6'],
+      labels: ['7.5','16.4','25.1','35.3','44.4','53.2','61.4','73.2','80.3','87.2'],
       datasets: [
         {
           label: 'Stacking (real)',
-          data: [7.3,17.9,24.4,39.0,43.1,52.0,60.2,65.0,75.6,94.3],
+          data: [7.8,14.1,28.5,32.0,44.6,52.0,59.7,66.3,76.1,91.0],
           borderColor: CHART_COLORS.green, backgroundColor: CHART_COLORS.green,
           tension: 0.25, pointRadius: 3
         },
         {
           label: 'Calibración perfecta',
-          data: [9.3,19.1,27.1,33.9,42.0,49.7,58.6,68.9,79.0,87.6],
+          data: [7.5,16.4,25.1,35.3,44.4,53.2,61.4,73.2,80.3,87.2],
           borderColor: CHART_COLORS.muted, borderDash: [4,4], pointRadius: 0, tension: 0
         }
       ]
@@ -1201,6 +1241,7 @@ function renderEloRanking(){
   wrap.innerHTML = html;
 }
 renderEloRanking();
+loadModelState();
 
 // ---------------------------------------------------------------
 // Cuotas de mercado en vivo (The Odds API — the-odds-api.com)

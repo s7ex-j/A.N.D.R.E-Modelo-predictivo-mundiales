@@ -5,6 +5,11 @@ on:
     branches: [principal]
     paths:
       - 'Dashboard/**'
+  # La Action semanal publica con GITHUB_TOKEN, y ese push no dispara otros
+  # workflows: por eso se despliega también cuando ella termina.
+  workflow_run:
+    workflows: ["Actualizar datos"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -18,6 +23,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +32,7 @@ jobs:
         run: |
           mkdir -p site
           cp Dashboard/andre_mundial2026.html site/index.html
+          if [ -f Dashboard/team_state.json ]; then cp Dashboard/team_state.json site/; fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

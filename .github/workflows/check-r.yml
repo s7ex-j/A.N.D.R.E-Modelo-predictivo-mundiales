@@ -1,9 +1,15 @@
-name: Sintaxis R
+name: Sintaxis R y pipeline
 
 on:
   push:
     branches: [principal]
   pull_request:
+  workflow_dispatch:
+
+env:
+  # renv.lock fija las versiones para correr el proyecto en una PC; en CI se
+  # instalan los binarios actuales y no hace falta activar la librería de renv.
+  RENV_ACTIVATE_PROJECT: "false"
 
 jobs:
   parse:
@@ -12,7 +18,49 @@ jobs:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-r@v2
       # Comprueba que todos los scripts del pipeline y de la API se puedan parsear.
-      # No entrena modelos: eso requiere los datos completos y varios minutos de MCMC.
       - name: Parsear scripts
         run: |
           Rscript -e 'files <- c(list.files(c("scripts", "api"), pattern = "[.]R$", full.names = TRUE), "pipeline.R"); for (f in files) parse(f, encoding = "UTF-8"); cat(length(files), "archivos R sin errores de sintaxis\n")'
+
+  pipeline:
+    # Corre el pipeline completo con los datos del repo (sin el modelo
+    # bayesiano, que necesita varios minutos de MCMC) y revisa que los
+    # resultados tengan sentido. Si un cambio rompe un script o empeora el
+    # modelo por debajo del baseline, falla aquí y no en la PC de alguien.
+    needs: parse
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANDRE_SKIP_BAYES: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - name: Instalar paquetes
+        run: |
+          Rscript -e 'install.packages(c("data.table","dplyr","lubridate","glmnet","nnet","xgboost","jsonlite","plumber"))'
+      - name: Correr pipeline.R
+        run: Rscript pipeline.R
+      - name: Revisar resultados
+        run: |
+          Rscript -e '
+            library(data.table)
+            ev <- fread("data/evaluation_summary.csv"); print(ev)
+            stopifnot(all(c("naive","dc","nn","xgb","avg","stack") %in% ev$modelo))
+            naive <- ev[modelo == "naive", accuracy]
+            stopifnot(all(ev[modelo != "naive", accuracy] > naive + 0.05))
+            stopifnot(all(ev[modelo != "naive", RPS] < ev[modelo == "naive", RPS]))
+            for (f in c("output/model_xgb_classifier.rds","output/model_nnet.rds","output/model_stacking.rds",
+                        "output/calibration_functions.rds","output/team_state.rds","Dashboard/team_state.json"))
+              stopifnot(file.exists(f))
+            cat("Pipeline OK\n")'
+      - name: Probar la API
+        run: |
+          Rscript -e '
+            setwd("api"); source("predict_match.R")
+            p <- predict_match("Brazil", "Argentina", neutral = TRUE, importance = 1)
+            str(p)
+            s <- p$stack_home + p$stack_draw + p$stack_away
+            stopifnot(abs(s - 1) < 1e-3, p$stack_home > 0, p$stack_away > 0)
+            cat("API OK\n")'

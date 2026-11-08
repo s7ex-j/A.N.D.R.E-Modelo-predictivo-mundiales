@@ -46,7 +46,7 @@ apply_calibration <- function(pfx, home, draw, away) {
   cal <- calibration_store[[pfx]]
   cal_val <- function(part, raw) {
     if (is.null(cal[[part]])) return(raw)
-    approxfun(cal[[part]]$x, cal[[part]]$yf, rule = 2)(raw)
+    approxfun(cal[[part]]$x, cal[[part]]$yf, rule = 2, ties = mean)(raw)
   }
   h <- cal_val("home", home); d <- cal_val("draw", draw); a <- cal_val("away", away)
   tot <- h + d + a
@@ -148,7 +148,8 @@ predict_match <- function(home_team, away_team, neutral = FALSE, importance = 1.
 
   ## ---- XGBoost (clasificador). Columnas de salida: p_away, p_draw, p_home ----
   xgb_input <- xgb.DMatrix(as.matrix(feat))
-  xgb_raw <- predict(xgb_model, xgb_input, reshape = TRUE)
+  xgb_raw <- predict(xgb_model, xgb_input)   # matriz n x 3 en xgboost >= 2
+  if (!is.matrix(xgb_raw)) xgb_raw <- matrix(xgb_raw, ncol = 3, byrow = TRUE)
   xgb_p <- list(home = unname(xgb_raw[1,3]), draw = unname(xgb_raw[1,2]), away = unname(xgb_raw[1,1]))
 
   ## ---- Red neuronal (misma normalización que 07_model_deep_learning.R) ----

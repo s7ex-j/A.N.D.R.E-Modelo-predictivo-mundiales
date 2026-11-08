@@ -47,6 +47,18 @@ Home**. La API leía por posición asumiendo Home–Draw–Away, lo que habría
 intercambiado "gana local" con "gana visitante". Fix: extraer por nombre
 de dimensión (`"H"`, `"D"`, `"A"`).
 
+### 1.5 Los goles esperados de la API salían ~4% bajos
+
+`10_build_team_state.R` centraba el ataque de Dixon-Coles en 0 (`att - mean(att)`)
+para que fuera legible, pero el modelo no tiene intercepto:
+`lambda = exp(att + def + gamma)`. Restar la media solo al ataque bajaba todos
+los goles esperados. Comparado con los partidos de 2025-2026, la API predecía
+1.53 goles del local cuando el promedio real era 1.66.
+
+- **Fix:** sumar a la defensa lo mismo que se resta al ataque; el lambda queda
+  idéntico al del ajuste (1.60 vs. 1.66 real después del fix; la diferencia
+  que queda es la del propio modelo, no del centrado).
+
 ---
 
 ## 2. Decisión revertida: ventaja de local en cancha neutral
@@ -131,18 +143,50 @@ distintas**, y con eso el stacking parecía el mejor (62.0% vs. 60.0% de XGBoost
 
 ---
 
-## 6. Roadmap
+## 6. v2: el test completo para evaluar, todo lo demás fuera de él
 
-- **Convergencia del modelo bayesiano:** con 1 cadena y 400 iteraciones, el
-  intercepto queda con Rhat 1.07 y ESS 24 (lo deseable es Rhat < 1.01). Usar 4
-  cadenas y más iteraciones antes de sacar conclusiones de ese modelo.
+El fix de §5 dejó una comparación justa, pero sobre solo 1,230 partidos: el
+70% del test se gastaba en ajustar la calibración y el meta-learner. Con tan
+pocos partidos casi ninguna diferencia salía significativa. Cambios:
 
-- **Cuotas de cierre como feature:** en la literatura son el predictor
-  individual más fuerte para fútbol (football-data.co.uk las tiene para
-  ligas domésticas, no para selecciones).
+- **Predicciones out-of-fold walk-forward (05, 07).** Para cada año de 2019 a
+  2022, XGBoost y la red se entrenan con todo lo anterior y predicen ese año.
+  Son 3,597 partidos que ningún modelo vio al entrenarse.
+- **Calibración y stacking con esas predicciones (08).** Ya no tocan el test,
+  así que los 4,098 partidos de 2023+ sirven para evaluar a todos.
+- **Tuning de XGBoost con validación temporal (05).** Antes, `xgb.cv` con
+  5-fold aleatorio mezclaba partidos futuros en el entrenamiento al elegir
+  `n_rounds`. Ahora una grilla pequeña (profundidad 3, 4 y 5) se evalúa con
+  los mismos cortes anuales; ganó profundidad 3 (log-loss 0.8829) por muy poco.
+- **El bayesiano sale del ensamble.** Cubría 414 de 4,098 partidos; en el resto
+  entraba como "1/3, 1/3, 1/3", que para el stacking es ruido. Ahora se reporta
+  aparte. Con 4 cadenas y 3,000 iteraciones converge: Rhat máximo 1.003 en los
+  467 parámetros (antes 1.07 con 1 cadena y 400 iteraciones).
+- **Resultado:** stacking 60.6% y XGBoost 60.4% en el test completo, empatados
+  (IC 95% de la diferencia [-0.3, +0.7] puntos). Con 3.3 veces más partidos la
+  conclusión de §5 se confirma: el ensamble no le gana a XGBoost solo.
+- **Empates:** 22.8% de los partidos, pero el stacking elige empate en el 2.1%.
+  La probabilidad media de empate sí está bien calibrada (~22%); es que el
+  empate casi nunca es el resultado más probable. Mejorar esto no pasa por
+  calibrar, sino por un modelo que trate el empate de forma explícita (roadmap).
+
+Además: `00_config.R` reúne las fechas de corte y la lista de features (antes
+copiadas en cada script), `pipeline.R` corre cada script en un entorno limpio y
+sigue aunque falle el bayesiano, y la CI corre el pipeline completo en cada push.
+
+---
+
+## 7. Roadmap
+
+- **Modelo específico para empates** (p. ej. Poisson bivariado con inflación de
+  empates, o un umbral de decisión que elija "empate" cuando los dos equipos
+  están parejos) y medir si mejora el RPS sin empeorar el accuracy.
+- **Cuotas de cierre como feature o como referencia a superar:** en la
+  literatura son el predictor individual más fuerte para fútbol
+  (football-data.co.uk las tiene para ligas domésticas, no para selecciones;
+  falta una fuente para partidos internacionales).
+- **Desglose por confederación**, con un mapa selección → confederación.
 - **Red profunda con keras3/TensorFlow** en lugar de la red `nnet` de una
   capa (el código ya está en `07`, desactivado).
-- **CV walk-forward por bloques** para tunear XGBoost, en vez de 5-fold
-  aleatorio (reduce fuga temporal en la selección de hiperparámetros).
-- **Actualización automática de resultados** en lugar de cargar el CSV a
-  mano.
+- **Reentrenamiento automático:** la Action semanal ya actualiza los datos y el
+  dashboard, pero no reentrena los modelos ni la API.
