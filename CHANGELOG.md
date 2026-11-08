@@ -15,8 +15,9 @@ detalle de cada corrección está en `docs/BITACORA_DECISIONES.md` (§5 y §6).
 - **Intervalos de confianza 95%** (bootstrap) en la tabla de resultados.
 - **Nuevo `09f`:** empates, matriz de confusión y accuracy por tipo de partido y cancha.
 - Baseline naive con las frecuencias del entrenamiento, no del test.
-- Resultado: stacking 60.5% y XGBoost 60.4% (empatados), red neuronal 59.6%,
-  Dixon-Coles 56.0%, naive 47.2%. Mundial 2026: stacking 67.3% (104 partidos).
+- Resultado: stacking 60.6% y XGBoost 60.4% (empatados), red neuronal 59.6%,
+  Dixon-Coles 56.0%, naive 47.2%. Mundial 2026 (104 partidos): XGBoost 66.3%,
+  stacking 65.4% con el mejor RPS (0.155).
 
 ### Correcciones
 - Evaluación sobre la misma muestra para todos los modelos (#3).

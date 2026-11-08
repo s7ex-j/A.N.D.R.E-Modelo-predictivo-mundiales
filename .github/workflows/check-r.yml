@@ -6,6 +6,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  # renv.lock fija las versiones para correr el proyecto en una PC; en CI se
+  # instalan los binarios actuales y no hace falta activar la librería de renv.
+  RENV_ACTIVATE_PROJECT: "false"
+
 jobs:
   parse:
     runs-on: ubuntu-latest

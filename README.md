@@ -30,24 +30,24 @@ usó para ajustarse: la calibración y el stacking se entrenan con predicciones
 | Naive (frecuencias del train) | 47.2% [45.7, 48.7] | 1.053 | 0.635 | 0.230 [0.227, 0.233] |
 | Dixon-Coles | 56.0% [54.4, 57.4] | 0.938 | 0.555 | 0.191 [0.187, 0.196] |
 | Red neuronal | 59.6% [58.1, 61.1] | 0.872 | 0.513 | 0.171 [0.166, 0.176] |
-| XGBoost | 60.4% [58.8, 61.8] | 0.864 | 0.507 | 0.169 [0.165, 0.174] |
-| Promedio simple (calibrado) | 60.1% [58.5, 61.6] | 0.872 | 0.513 | 0.171 [0.167, 0.176] |
-| Stacking (meta-learner) | 60.5% [59.0, 62.0] | 0.868 | 0.509 | 0.169 [0.164, 0.174] |
+| XGBoost | 60.4% [58.9, 61.9] | 0.864 | 0.507 | 0.169 [0.165, 0.174] |
+| Promedio simple (calibrado) | 60.1% [58.6, 61.6] | 0.872 | 0.512 | 0.171 [0.167, 0.176] |
+| Stacking (meta-learner) | 60.6% [59.1, 62.1] | 0.867 | 0.509 | 0.169 [0.164, 0.174] |
 
-**Lectura:** stacking y XGBoost quedan **empatados** (diferencia 0.1 puntos,
-IC 95% de la diferencia [-0.4, +0.6]; bootstrap pareado, 5,000 remuestreos).
-El stacking sí supera a la red neuronal (+0.9 puntos, significativo) y todos
+**Lectura:** stacking y XGBoost quedan **empatados** (diferencia 0.2 puntos,
+IC 95% de la diferencia [-0.3, +0.7]; bootstrap pareado, 5,000 remuestreos).
+El stacking sí supera a la red neuronal (+1.0 punto, significativo) y todos
 superan con claridad a Dixon-Coles y al naive. En otras palabras: combinar
 modelos no le agrega precisión a XGBoost solo; la API sirve el stacking, que
 rinde igual y además devuelve las probabilidades de cada modelo base.
 
-En **Copa del Mundo 2026** (104 partidos): stacking 67.3% (RPS 0.157), red
-neuronal y XGBoost 65.4%, promedio 63.5%, Dixon-Coles 51.9%. El stacking supera
-de forma significativa solo a Dixon-Coles; contra los demás la diferencia no es
+En **Copa del Mundo 2026** (104 partidos): XGBoost 66.3%; stacking, red neuronal
+y promedio 65.4%; Dixon-Coles 51.9%. El stacking tiene el mejor RPS (0.155) y
+supera de forma significativa solo a Dixon-Coles; contra los demás la diferencia no es
 concluyente con 104 partidos.
 
 **Empates:** el 22.8% de los partidos del test terminó en empate, pero el
-stacking elige "empate" solo en el 2.7% (y XGBoost en el 0.3%). No es un error
+stacking elige "empate" solo en el 2.1% (y XGBoost en el 0.3%). No es un error
 de calibración: la probabilidad media de empate que asignan (~22%) coincide con
 la frecuencia real. Es que un empate casi nunca es el resultado *más* probable
 de un partido. Detalle, matriz de confusión y accuracy por tipo de partido
@@ -55,15 +55,16 @@ de un partido. Detalle, matriz de confusión y accuracy por tipo de partido
 `scripts/09f_draws_and_segments.R`.
 
 Calibración ("gana local", 10 bins): todos los modelos quedan entre 0.018 y
-0.026 de brecha promedio; la red neuronal es la mejor calibrada (0.018) — ver
+0.027 de brecha promedio; la red neuronal es la mejor calibrada (0.018) — ver
 `scripts/09e_calibration_diagnostics.R`.
 
 El modelo **bayesiano** (`06`) se reporta aparte porque cubre solo 414 partidos
-(oct-2025 a dic-2025): 59.4% de accuracy, sin diferencia significativa con los
+(oct-2025 a dic-2025): 59.9% de accuracy, sin diferencia significativa con los
 demás en esa ventana. Converge (Rhat máximo 1.003 en 467 parámetros).
 
-> Las cifras pueden moverse unas décimas según la plataforma y la versión de
-> los paquetes; `renv.lock` fija las versiones. Versiones anteriores de este
+> Cifras de R 4.6.0 en Windows con las versiones de `renv.lock`; con otras
+> versiones de los paquetes (sobre todo xgboost) pueden moverse unas décimas, y
+> en el Mundial, por ser solo 104 partidos, uno o dos puntos. Versiones anteriores de este
 > README reportaban otras cifras: ver la
 > [bitácora](docs/BITACORA_DECISIONES.md) (§5 y §6) para saber por qué cambiaron.
 

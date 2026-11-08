@@ -162,10 +162,10 @@ pocos partidos casi ninguna diferencia salía significativa. Cambios:
   entraba como "1/3, 1/3, 1/3", que para el stacking es ruido. Ahora se reporta
   aparte. Con 4 cadenas y 3,000 iteraciones converge: Rhat máximo 1.003 en los
   467 parámetros (antes 1.07 con 1 cadena y 400 iteraciones).
-- **Resultado:** stacking 60.5% y XGBoost 60.4% en el test completo, empatados
-  (IC 95% de la diferencia [-0.4, +0.6] puntos). Con 3.3 veces más partidos la
+- **Resultado:** stacking 60.6% y XGBoost 60.4% en el test completo, empatados
+  (IC 95% de la diferencia [-0.3, +0.7] puntos). Con 3.3 veces más partidos la
   conclusión de §5 se confirma: el ensamble no le gana a XGBoost solo.
-- **Empates:** 22.8% de los partidos, pero el stacking elige empate en el 2.7%.
+- **Empates:** 22.8% de los partidos, pero el stacking elige empate en el 2.1%.
   La probabilidad media de empate sí está bien calibrada (~22%); es que el
   empate casi nunca es el resultado más probable. Mejorar esto no pasa por
   calibrar, sino por un modelo que trate el empate de forma explícita (roadmap).

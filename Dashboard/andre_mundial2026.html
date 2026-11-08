@@ -318,7 +318,7 @@
       </div>
     </div>
     <div class="headline-stats">
-      <div class="hstat"><div class="v" style="color:var(--green)">60.5%</div><div class="l">Accuracy stack (test)</div></div>
+      <div class="hstat"><div class="v" style="color:var(--green)">60.6%</div><div class="l">Accuracy stack (test)</div></div>
       <div class="hstat"><div class="v">0.169</div><div class="l">RPS stack</div></div>
       <div class="hstat"><div class="v">4,098</div><div class="l">Partidos out-of-sample</div></div>
       <div class="device-toggle">
@@ -569,7 +569,7 @@
         <div class="bt-cell"><div class="m">Red neur.</div><div class="a">59.6%</div><div class="n">RPS .171</div></div>
         <div class="bt-cell"><div class="m">XGBoost</div><div class="a">60.4%</div><div class="n">RPS .169</div></div>
         <div class="bt-cell"><div class="m">Promedio</div><div class="a">60.1%</div><div class="n">RPS .171</div></div>
-        <div class="bt-cell hi"><div class="m">Stacking (en uso)</div><div class="a hi">60.5%</div><div class="n">RPS .169</div></div>
+        <div class="bt-cell hi"><div class="m">Stacking (en uso)</div><div class="a hi">60.6%</div><div class="n">RPS .169</div></div>
       </div>
       <div class="note">Métricas reales de <span style="color:var(--muted)">09_evaluation.R</span> sobre el test completo (n=4,098, ene-2023 a oct-2026), que ningún modelo usó para ajustarse: la calibración y el stacking se entrenan con predicciones out-of-fold de 2019&ndash;2022. Bootstrap pareado (5,000 remuestreos): stacking y XGBoost quedan <b style="color:var(--green)">estad&iacute;sticamente empatados</b>; todos superan a Dixon-Coles.</div>
     </div>
@@ -593,7 +593,7 @@
     <div class="panel">
       <p class="panel-title">Calibraci&oacute;n del stacking</p>
       <div class="chart-box"><canvas id="chartCalibration"></canvas></div>
-      <div class="note">Agrupa partidos por probabilidad predicha de "gana local" (10 grupos, test completo) vs. frecuencia real. L&iacute;nea punteada = calibraci&oacute;n perfecta. Brecha promedio del stacking: <b style="color:var(--green)">0.023</b> (red neuronal 0.018, XGBoost 0.026). Una brecha baja significa que un 60% predicho se cumple cerca del 60% de las veces.</div>
+      <div class="note">Agrupa partidos por probabilidad predicha de "gana local" (10 grupos, test completo) vs. frecuencia real. L&iacute;nea punteada = calibraci&oacute;n perfecta. Brecha promedio del stacking: <b style="color:var(--green)">0.027</b> (red neuronal 0.018, XGBoost 0.027). Una brecha baja significa que un 60% predicho se cumple cerca del 60% de las veces.</div>
     </div>
   </div>
 
@@ -1166,12 +1166,12 @@ try {
       datasets: [
         {
           label: 'Test completo',
-          data: [47.22, 55.95, 59.59, 60.35, 60.05, 60.47],
+          data: [47.22, 55.95, 59.59, 60.42, 60.08, 60.61],
           backgroundColor: CHART_COLORS.blue, borderRadius: 3, barPercentage: 0.65
         },
         {
           label: 'Solo Mundial 2026',
-          data: [null, 51.92, 65.38, 65.38, 63.46, 67.31],
+          data: [null, 51.92, 65.38, 66.35, 65.38, 65.38],
           backgroundColor: CHART_COLORS.green, borderRadius: 3, barPercentage: 0.65
         }
       ]
@@ -1191,17 +1191,17 @@ try {
   new Chart(document.getElementById('chartCalibration'), {
     type: 'line',
     data: {
-      labels: ['7.6','16.2','24.8','36.0','44.4','53.0','61.3','72.9','80.5','87.2'],
+      labels: ['7.5','16.4','25.1','35.3','44.4','53.2','61.4','73.2','80.3','87.2'],
       datasets: [
         {
           label: 'Stacking (real)',
-          data: [7.3,15.1,27.3,34.5,42.7,51.7,59.9,64.6,78.8,90.2],
+          data: [7.8,14.1,28.5,32.0,44.6,52.0,59.7,66.3,76.1,91.0],
           borderColor: CHART_COLORS.green, backgroundColor: CHART_COLORS.green,
           tension: 0.25, pointRadius: 3
         },
         {
           label: 'Calibración perfecta',
-          data: [7.6,16.2,24.8,36.0,44.4,53.0,61.3,72.9,80.5,87.2],
+          data: [7.5,16.4,25.1,35.3,44.4,53.2,61.4,73.2,80.3,87.2],
           borderColor: CHART_COLORS.muted, borderDash: [4,4], pointRadius: 0, tension: 0
         }
       ]

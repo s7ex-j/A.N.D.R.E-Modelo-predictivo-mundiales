@@ -32,39 +32,40 @@ predictions (see Methodology). Data from `martj42/international_results` up to
 | Naive (training frequencies) | 47.2% [45.7, 48.7] | 1.053 | 0.635 | 0.230 [0.227, 0.233] |
 | Dixon-Coles | 56.0% [54.4, 57.4] | 0.938 | 0.555 | 0.191 [0.187, 0.196] |
 | Neural network | 59.6% [58.1, 61.1] | 0.872 | 0.513 | 0.171 [0.166, 0.176] |
-| XGBoost | 60.4% [58.8, 61.8] | 0.864 | 0.507 | 0.169 [0.165, 0.174] |
-| Simple average (calibrated) | 60.1% [58.5, 61.6] | 0.872 | 0.513 | 0.171 [0.167, 0.176] |
-| Stacking (meta-learner) | 60.5% [59.0, 62.0] | 0.868 | 0.509 | 0.169 [0.164, 0.174] |
+| XGBoost | 60.4% [58.9, 61.9] | 0.864 | 0.507 | 0.169 [0.165, 0.174] |
+| Simple average (calibrated) | 60.1% [58.6, 61.6] | 0.872 | 0.512 | 0.171 [0.167, 0.176] |
+| Stacking (meta-learner) | 60.6% [59.1, 62.1] | 0.867 | 0.509 | 0.169 [0.164, 0.174] |
 
-**Reading:** stacking and XGBoost are **tied** (difference 0.1 points, 95% CI of
-the difference [-0.4, +0.6]; paired bootstrap, 5,000 resamples). Stacking does
-beat the neural network (+0.9 points, significant), and every model clearly
+**Reading:** stacking and XGBoost are **tied** (difference 0.2 points, 95% CI of
+the difference [-0.3, +0.7]; paired bootstrap, 5,000 resamples). Stacking does
+beat the neural network (+1.0 point, significant), and every model clearly
 beats Dixon-Coles and the naive baseline. In other words, combining models adds
 no accuracy over XGBoost alone; the API serves the stacking model, which
 performs the same and also returns each base model's probabilities.
 
-On **World Cup 2026** matches (104): stacking 67.3% (RPS 0.157), neural network
-and XGBoost 65.4%, average 63.5%, Dixon-Coles 51.9%. Stacking is significantly
-better only than Dixon-Coles; against the others the difference is not
+On **World Cup 2026** matches (104): XGBoost 66.3%; stacking, neural network and
+average 65.4%; Dixon-Coles 51.9%. Stacking has the best RPS (0.155) and is
+significantly better only than Dixon-Coles; against the others the difference is not
 conclusive with 104 matches.
 
 **Draws:** 22.8% of test matches ended in a draw, but stacking picks "draw" in
-only 2.7% of them (XGBoost in 0.3%). This is not a calibration error: the mean
+only 2.1% of them (XGBoost in 0.3%). This is not a calibration error: the mean
 draw probability they assign (~22%) matches the real frequency. A draw is just
 almost never the *most* likely outcome of a match. Details, confusion matrix and
 accuracy by match type (friendly, qualifier, tournament, World Cup; home or
 neutral venue) in `scripts/09f_draws_and_segments.R`.
 
-Calibration ("home win", 10 bins): every model sits between 0.018 and 0.026 mean
+Calibration ("home win", 10 bins): every model sits between 0.018 and 0.027 mean
 gap; the neural network is the best calibrated (0.018) — see
 `scripts/09e_calibration_diagnostics.R`.
 
 The **Bayesian** model (`06`) is reported separately because it covers only 414
-matches (Oct-Dec 2025): 59.4% accuracy, with no significant difference from the
+matches (Oct-Dec 2025): 59.9% accuracy, with no significant difference from the
 others in that window. It converges (max Rhat 1.003 across 467 parameters).
 
-> Figures may move by a few tenths depending on platform and package versions;
-> `renv.lock` pins the versions. Earlier versions of this README reported other
+> Figures from R 4.6.0 on Windows with the versions in `renv.lock`; with other
+> package versions (especially xgboost) they may move by a few tenths, and on
+> the World Cup, with only 104 matches, by one or two points. Earlier versions of this README reported other
 > figures: see the [decision log](docs/BITACORA_DECISIONES.md) (§5 and §6, in
 > Spanish) for why they changed.
 
