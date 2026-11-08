@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "Si usas este trabajo, cítalo con los datos de abajo."
+type: software
+title: "A.N.D.R.E. — Adaptive Neural Dixon-coles Regularized Ensemble: modelo predictivo de fútbol internacional (Mundial 2026)"
+version: "1.0.0"
+date-released: "2026-11-08"
+authors:
+  - family-names: "Vilca Ramos"
+    given-names: "Jharol André"
+    orcid: "https://orcid.org/0009-0009-7897-3439"
+url: "https://s7ex-j.github.io/A.N.D.R.E-Modelo-predictivo-mundiales/"
+repository-code: "https://github.com/s7ex-j/A.N.D.R.E-Modelo-predictivo-mundiales"
+license: MIT
+keywords:
+  - "fútbol"
+  - "Mundial 2026"
+  - "Dixon-Coles"
+  - "Elo"
+  - "XGBoost"
+  - "stacking"
+  - "calibración isotónica"
+  - "validación walk-forward"
+  - "investigación reproducible"
+abstract: >-
+  Modelo predictivo de resultados de fútbol internacional (1X2) que combina Elo dinámico,
+  Dixon-Coles con reajuste walk-forward, XGBoost y una red neuronal, unidos por calibración
+  isotónica y un meta-learner (stacking glmnet) ajustados con predicciones out-of-fold de
+  2019-2022. Se evalúa sobre 4 098 partidos de 2023 a octubre de 2026, incluidos los 104 del
+  Mundial 2026, con RPS, log-loss, Brier, accuracy, intervalos bootstrap y comparaciones
+  pareadas entre modelos. Incluye un modelo bayesiano jerárquico (Stan/brms) como análisis
+  aparte, una API en R (plumber) y un dashboard web.

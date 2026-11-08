@@ -1,20 +1,30 @@
 ## =============================================================
 ## 08_ensemble.R
-## Ensamble y stacking (meta-learner glmnet):
-##  1. Incorpora preds_bayes.csv al ensamble (si existe).
-##  2. Calibración isotónica por modelo ANTES de promediar/stackear
-##     (mejora Brier/log-loss sin tocar el ranking de accuracy).
-##  3. Guarda stack_colnames.rds para que la API sepa el orden EXACTO
-##     de columnas que espera el meta-learner.
+## Ensamble y stacking (meta-learner glmnet).
+##
+## Diseño (v2): la calibración isotónica y el meta-learner se ajustan con
+## las predicciones OUT-OF-FOLD de META_YEARS (walk-forward, generadas en
+## 05 y 07), que están en el periodo de entrenamiento. Así el test set
+## completo (2023+) queda fuera de muestra para TODOS los modelos y se
+## evalúan sobre los mismos partidos.
+##
+## (Antes la calibración y el stacking se ajustaban con el primer 70% del
+## test, lo que dejaba solo el 30% final para evaluar; ver bitácora §5.)
+##
+##  1. Probabilidades Dixon-Coles (de los lambdas walk-forward).
+##  2. Calibración isotónica por modelo, ajustada en META_YEARS.
+##  3. Promedio simple de las probabilidades calibradas.
+##  4. Stacking: glmnet multinomial entrenado en META_YEARS.
+##  5. Guarda calibración y orden de columnas para la API.
+## El bayesiano (06) se agrega al archivo de salida solo para evaluarlo
+## aparte; no entra al promedio ni al stacking (cubre una ventana corta).
 ## =============================================================
 suppressMessages({ library(data.table); library(glmnet) })
+source("scripts/00_config.R")
 
-DATA_DIR <- "data"
-OUT_DIR  <- "output"
 model_dt <- fread(file.path(DATA_DIR, "model_features.csv"))
 model_dt[, date := as.Date(date)]
-SPLIT_DATE <- as.Date("2023-01-01")
-test <- model_dt[date >= SPLIT_DATE]
+META_START <- as.Date(sprintf("%d-01-01", min(META_YEARS)))
 
 ## ---------------------------------------------------------------
 ## (1) Probabilidades Dixon-Coles vía Poisson bivariado + tau
@@ -38,162 +48,116 @@ dc_probs <- function(lh, la, rho, max_goals = 10) {
   data.table(dc_p_home = p_home/tot, dc_p_draw = p_draw/tot, dc_p_away = p_away/tot)
 }
 
-test <- cbind(test, dc_probs(test$lambda_home, test$lambda_away, test$dc_rho))
-pred_class_dc <- c("A","D","H")[apply(test[, .(dc_p_away, dc_p_draw, dc_p_home)], 1, which.max)]
-cat("Accuracy Dixon-Coles (baseline puro):",
-    round(mean(pred_class_dc == test$result), 4), "\n")
+base <- model_dt[date >= META_START]
+base <- cbind(base[, .(match_id, date, home_team, away_team, result)],
+              dc_probs(base$lambda_home, base$lambda_away, base$dc_rho))
+base[, split := fifelse(date < SPLIT_DATE, "meta", "test")]
 
 ## ---------------------------------------------------------------
-## (2) Cargar predicciones de los demás modelos
+## (2) Unir predicciones de nn y xgb: out-of-fold (meta) + test
 ## ---------------------------------------------------------------
-nn <- fread(file.path(DATA_DIR, "preds_nnet.csv"))
-ens <- merge(test[, .(match_id, date, home_team, away_team, result,
-                       dc_p_home, dc_p_draw, dc_p_away)],
-             nn[, .(match_id, nn_p_home, nn_p_draw, nn_p_away)], by = "match_id")
-
-xgb_path <- file.path(DATA_DIR, "preds_xgboost.csv")
-if (file.exists(xgb_path)) {
-  xgb <- fread(xgb_path)
-  ens <- merge(ens, xgb[, .(match_id, xgb_p_home, xgb_p_draw, xgb_p_away)],
-               by = "match_id", all.x = TRUE)
-  cat("-> Predicciones de XGBoost incorporadas al ensamble.\n")
-} else {
-  cat("-> preds_xgboost.csv no encontrado. Se omite del ensamble.\n")
+read_preds <- function(test_file, oof_file, prefix) {
+  cols <- c("match_id", paste0(prefix, c("_p_home", "_p_draw", "_p_away")))
+  te <- fread(file.path(DATA_DIR, test_file))[, ..cols]
+  of <- fread(file.path(DATA_DIR, oof_file))[, ..cols]
+  rbind(of, te)
 }
+ens <- merge(base, read_preds("preds_nnet.csv", "preds_nnet_oof.csv", "nn"), by = "match_id")
+ens <- merge(ens, read_preds("preds_xgboost.csv", "preds_xgboost_oof.csv", "xgb"), by = "match_id")
+setorder(ens, date, match_id)
+cat("Partidos para calibrar y entrenar el stacking (", paste(range(META_YEARS), collapse = "-"),
+    "):", ens[split == "meta", .N], " | test:", ens[split == "test", .N], "\n")
 
-## ---- NUEVO: incorporar el modelo bayesiano MCMC ----
-bayes_path <- file.path(DATA_DIR, "preds_bayes.csv")
-if (file.exists(bayes_path)) {
-  bayes <- fread(bayes_path)
-  ens <- merge(ens, bayes[, .(match_id, bayes_p_home, bayes_p_draw, bayes_p_away)],
-               by = "match_id", all.x = TRUE)
-  cat("-> Predicciones bayesianas MCMC incorporadas al ensamble (",
-      sum(!is.na(ens$bayes_p_home)), "de", nrow(ens),
-      "filas -- recuerda que 06 solo cubre la ventana sep-2024/ene-2026).\n")
-} else {
-  cat("-> preds_bayes.csv no encontrado (corre 06_model_bayesian_mcmc.R). Se omite.\n")
-}
+pred_class <- function(pa, pd, ph) c("A","D","H")[max.col(cbind(pa, pd, ph), ties.method = "first")]
+tst <- ens$split == "test"
+cat("Accuracy Dixon-Coles (test):",
+    round(mean(pred_class(ens$dc_p_away, ens$dc_p_draw, ens$dc_p_home)[tst] == ens$result[tst]), 4), "\n")
 
 ## ---------------------------------------------------------------
-## (2b) NUEVO: calibración isotónica por modelo base
-## Ajusta cada probabilidad p_home/p_draw/p_away de cada modelo con
-## una regresión isotónica 1-D (monótona) contra el resultado real,
-## usando SOLO el primer 70% cronológico del test (para no usar el
-## mismo tramo que luego se usa como holdout del stacking).
+## (3) Calibración isotónica por modelo, ajustada SOLO con META_YEARS
 ## ---------------------------------------------------------------
-setorder(ens, date)
-cut_cal <- floor(0.7 * nrow(ens))
-cal_fit_dat <- ens[1:cut_cal]
+fit_rows <- which(ens$split == "meta")
+calibration_store <- list()   # breakpoints para aplicar la misma calibración en vivo (API)
 
-model_probs_raw <- grep("_p_home$|_p_draw$|_p_away$", names(ens), value = TRUE)
-prefixes <- unique(gsub("_p_(home|draw|away)$", "", model_probs_raw))
-
-calibration_store <- list()  # NUEVO: guardamos los breakpoints para usarlos en vivo
-
-calibrate_col <- function(col, outcome_binary, fit_rows) {
-  ok <- !is.na(col[fit_rows]) & !is.na(outcome_binary[fit_rows])
-  if (sum(ok) < 30) return(list(vals = col, iso = NULL))
-  iso <- isoreg(col[fit_rows][ok], outcome_binary[fit_rows][ok])
-  # BUG REAL encontrado al probar con datos de verdad: isoreg() devuelve $x y $y
-  # en el ORDEN ORIGINAL de entrada (sin ordenar), pero $yf (los valores ajustados)
-  # SÍ vienen en orden ascendente de x (alineados con $ord, el vector de permutación
-  # que ordena $x). Pasarle iso$x tal cual a approxfun() -- sin ordenar -- produce
-  # una "calibración" sin sentido (ni monótona ni relacionada con el score real).
-  # Fix: usar iso$x[iso$ord] (= x ordenado), que sí calza con iso$yf.
+calibrate_col <- function(col, outcome_binary) {
+  ok <- fit_rows[!is.na(col[fit_rows])]
+  iso <- isoreg(col[ok], outcome_binary[ok])
+  # isoreg() devuelve $x en el orden ORIGINAL y $yf ordenado según $ord:
+  # hay que usar iso$x[iso$ord] para que calcen (bug real, ver bitácora §1.1).
   sorted_x <- iso$x[iso$ord]
-  calib_fun <- approxfun(sorted_x, iso$yf, rule = 2)
+  calib_fun <- approxfun(sorted_x, iso$yf, rule = 2, ties = mean)
   list(vals = calib_fun(col), iso = list(x = sorted_x, yf = iso$yf))
 }
 
-for (pfx in prefixes) {
-  hc <- paste0(pfx, "_p_home"); dc_ <- paste0(pfx, "_p_draw"); ac <- paste0(pfx, "_p_away")
-  if (!all(c(hc, dc_, ac) %in% names(ens))) next
-  h_bin <- as.integer(ens$result == "H")
-  d_bin <- as.integer(ens$result == "D")
-  a_bin <- as.integer(ens$result == "A")
-  r_h <- calibrate_col(ens[[hc]], h_bin, seq_len(cut_cal))
-  r_d <- calibrate_col(ens[[dc_]], d_bin, seq_len(cut_cal))
-  r_a <- calibrate_col(ens[[ac]], a_bin, seq_len(cut_cal))
-  ens[[paste0(pfx, "_p_home_cal")]] <- r_h$vals
-  ens[[paste0(pfx, "_p_draw_cal")]] <- r_d$vals
-  ens[[paste0(pfx, "_p_away_cal")]] <- r_a$vals
-  # renormalizar para que sumen 1 -- CON SALVAGUARDA: si la calibración isotónica
-  # (ajustada independientemente por clase) llega a mandar las 3 probabilidades a 0
-  # para la misma fila (raro pero real -- pasó en 10-19 filas de 3,686 con datos
-  # reales), tot=0 produce NaN (0/0) que después revienta el which.max(). Se
-  # reemplaza esa fila puntual por "sin información" (1/3, 1/3, 1/3).
-  h_v <- ens[[paste0(pfx,"_p_home_cal")]]; d_v <- ens[[paste0(pfx,"_p_draw_cal")]]; a_v <- ens[[paste0(pfx,"_p_away_cal")]]
+for (pfx in ENSEMBLE_MODELS) {
+  cols <- paste0(pfx, c("_p_home", "_p_draw", "_p_away"))
+  r_h <- calibrate_col(ens[[cols[1]]], as.integer(ens$result == "H"))
+  r_d <- calibrate_col(ens[[cols[2]]], as.integer(ens$result == "D"))
+  r_a <- calibrate_col(ens[[cols[3]]], as.integer(ens$result == "A"))
+  h_v <- r_h$vals; d_v <- r_d$vals; a_v <- r_a$vals
+  # Las 3 clases se calibran por separado: se renormaliza para que sumen 1.
+  # Si las 3 quedan en 0 para una fila (raro), esa fila pasa a 1/3 cada una.
   tot <- h_v + d_v + a_v
   degenerate <- is.na(tot) | tot == 0
   if (any(degenerate)) {
-    h_v[degenerate] <- 1/3; d_v[degenerate] <- 1/3; a_v[degenerate] <- 1/3; tot[degenerate] <- 1
-    cat("  (", pfx, ": ", sum(degenerate), "filas con calibración degenerada -> fallback 1/3)\n")
+    h_v[degenerate] <- d_v[degenerate] <- a_v[degenerate] <- 1/3; tot[degenerate] <- 1
+    cat("  (", pfx, ":", sum(degenerate), "filas con calibración degenerada -> 1/3)\n")
   }
-  ens[[paste0(pfx,"_p_home_cal")]] <- h_v / tot
-  ens[[paste0(pfx,"_p_draw_cal")]] <- d_v / tot
-  ens[[paste0(pfx,"_p_away_cal")]] <- a_v / tot
+  set(ens, j = paste0(pfx, "_p_home_cal"), value = h_v / tot)
+  set(ens, j = paste0(pfx, "_p_draw_cal"), value = d_v / tot)
+  set(ens, j = paste0(pfx, "_p_away_cal"), value = a_v / tot)
   calibration_store[[pfx]] <- list(home = r_h$iso, draw = r_d$iso, away = r_a$iso)
 }
-cat("Calibración isotónica aplicada a:", paste(prefixes, collapse=", "), "\n")
+cat("Calibración isotónica (ajustada en", paste(range(META_YEARS), collapse = "-"), ") aplicada a:",
+    paste(ENSEMBLE_MODELS, collapse = ", "), "\n")
 saveRDS(calibration_store, file.path(OUT_DIR, "calibration_functions.rds"))
-cat("Guardado: output/calibration_functions.rds (para aplicar la MISMA calibración en vivo)\n")
 
 ## ---------------------------------------------------------------
-## (3a) Ensamble por promedio simple (usa versiones CALIBRADAS si existen)
+## (4) Promedio simple de las probabilidades calibradas
 ## ---------------------------------------------------------------
-model_probs <- if (any(grepl("_cal$", names(ens)))) {
-  grep("_p_(home|draw|away)_cal$", names(ens), value = TRUE)
-} else {
-  grep("_p_home$|_p_draw$|_p_away$", names(ens), value = TRUE)
+model_probs <- as.vector(t(outer(ENSEMBLE_MODELS, c("_p_home_cal", "_p_draw_cal", "_p_away_cal"), paste0)))
+ens[, avg_p_home := rowMeans(.SD), .SDcols = grep("_p_home_cal$", model_probs, value = TRUE)]
+ens[, avg_p_draw := rowMeans(.SD), .SDcols = grep("_p_draw_cal$", model_probs, value = TRUE)]
+ens[, avg_p_away := rowMeans(.SD), .SDcols = grep("_p_away_cal$", model_probs, value = TRUE)]
+cat("Accuracy ENSAMBLE (promedio calibrado, test):",
+    round(mean(pred_class(ens$avg_p_away, ens$avg_p_draw, ens$avg_p_home)[tst] == ens$result[tst]), 4), "\n")
+
+## ---------------------------------------------------------------
+## (5) Stacking: glmnet multinomial (ridge) entrenado en META_YEARS
+## ---------------------------------------------------------------
+meta <- ens[split == "meta"]
+set.seed(42)
+cvfit <- cv.glmnet(as.matrix(meta[, ..model_probs]),
+                   factor(meta$result, levels = c("A","D","H")),
+                   family = "multinomial", alpha = 0)
+pred_stack <- predict(cvfit, as.matrix(ens[, ..model_probs]), s = "lambda.min", type = "response")[, , 1]
+# Extraer por NOMBRE de columna, no por posición (evita el bug de orden A/D/H, bitácora §1.4)
+ens[, stack_p_away := pred_stack[, "A"]]
+ens[, stack_p_draw := pred_stack[, "D"]]
+ens[, stack_p_home := pred_stack[, "H"]]
+cat("Accuracy ENSAMBLE (stacking glmnet, test completo):",
+    round(mean(pred_class(ens$stack_p_away, ens$stack_p_draw, ens$stack_p_home)[tst] == ens$result[tst]), 4), "\n")
+
+## ---------------------------------------------------------------
+## (6) Bayesiano: solo para evaluarlo aparte (no entra al ensamble)
+## ---------------------------------------------------------------
+bayes_path <- file.path(DATA_DIR, "preds_bayes.csv")
+if (file.exists(bayes_path)) {
+  bayes <- fread(bayes_path)[, .(match_id, bayes_p_home, bayes_p_draw, bayes_p_away)]
+  ens <- merge(ens, bayes, by = "match_id", all.x = TRUE)
+  cat("-> Bayesiano agregado para evaluación aparte (", sum(!is.na(ens$bayes_p_home) & ens$split == "test"),
+      "partidos del test con predicción).\n")
 }
-home_cols <- grep("_p_home", model_probs, value = TRUE)
-draw_cols <- grep("_p_draw", model_probs, value = TRUE)
-away_cols <- grep("_p_away", model_probs, value = TRUE)
-
-ens[, avg_p_home := rowMeans(.SD, na.rm = TRUE), .SDcols = home_cols]
-ens[, avg_p_draw := rowMeans(.SD, na.rm = TRUE), .SDcols = draw_cols]
-ens[, avg_p_away := rowMeans(.SD, na.rm = TRUE), .SDcols = away_cols]
-pred_class_avg <- c("A","D","H")[apply(ens[, .(avg_p_away, avg_p_draw, avg_p_home)], 1, which.max)]
-cat("Accuracy ENSAMBLE (promedio, calibrado):",
-    round(mean(pred_class_avg == ens$result), 4), "\n")
 
 ## ---------------------------------------------------------------
-## (3b) Stacking (meta-learner multinomial glmnet) sobre probs CALIBRADAS
+## Guardar: solo el test (las filas meta ya cumplieron su función)
 ## ---------------------------------------------------------------
-## NUEVO: glmnet no acepta NA. El modelo bayesiano solo cubre una ventana
-## (sep-2024 a ene-2026), así que fuera de esa ventana sus columnas *_cal
-## quedan NA. Las imputamos como "sin información" (1/3, 1/3, 1/3) --
-## el ridge (alpha=0) del stacker ya se encarga de darle poco peso a una
-## columna que no aporta señal real en esas filas.
-for (col in model_probs) {
-  if (any(is.na(ens[[col]]))) ens[is.na(get(col)), (col) := 1/3]
-}
-
-cut <- floor(0.7 * nrow(ens))
-meta_train <- ens[1:cut]; meta_test <- ens[(cut+1):nrow(ens)]
-
-X_meta_train <- as.matrix(meta_train[, ..model_probs])
-X_meta_test  <- as.matrix(meta_test[, ..model_probs])
-y_meta_train <- factor(meta_train$result, levels = c("A","D","H"))
-
-cvfit <- cv.glmnet(X_meta_train, y_meta_train, family = "multinomial", alpha = 0)
-pred_stack <- predict(cvfit, X_meta_test, s = "lambda.min", type = "response")[,,1]
-pred_class_stack <- c("A","D","H")[apply(pred_stack, 1, which.max)]
-cat("Accuracy ENSAMBLE (stacking glmnet, sobre 30% final del test):",
-    round(mean(pred_class_stack == meta_test$result), 4), "\n")
-
-ens[, stack_split := c(rep("meta_train", nrow(meta_train)), rep("meta_test", nrow(meta_test)))]
-pred_stack_all <- predict(cvfit, as.matrix(ens[, ..model_probs]), s = "lambda.min", type = "response")[,,1]
-# Extraer por NOMBRE de columna, no por posición (evita el bug de orden A/D/H)
-ens[, stack_p_away := pred_stack_all[, "A"]]
-ens[, stack_p_draw := pred_stack_all[, "D"]]
-ens[, stack_p_home := pred_stack_all[, "H"]]
-
-fwrite(ens, file.path(DATA_DIR, "ensemble_predictions.csv"))
+out <- ens[split == "test"]
+out[, split := NULL]
+setorder(out, date, match_id)
+fwrite(out, file.path(DATA_DIR, "ensemble_predictions.csv"))
 saveRDS(cvfit, file.path(OUT_DIR, "model_stacking.rds"))
+saveRDS(model_probs, file.path(OUT_DIR, "stack_colnames.rds"))   # orden exacto que espera el stacker
 
-## ---- NUEVO: guardar el orden exacto de columnas que espera el stacker ----
-saveRDS(model_probs, file.path(OUT_DIR, "stack_colnames.rds"))
-
-cat("\nGuardado: data/ensemble_predictions.csv\n")
-cat("Guardado: output/stack_colnames.rds (orden:", paste(model_probs, collapse=", "), ")\n")
+cat("\nGuardado: data/ensemble_predictions.csv (", nrow(out), "partidos del test)\n")
+cat("Guardado: output/stack_colnames.rds (orden:", paste(model_probs, collapse = ", "), ")\n")

@@ -18,40 +18,54 @@ interactivo de un solo archivo HTML con cuotas de mercado en vivo.
 
 ---
 
-## Resultados (holdout común: 1,230 partidos, 2025-09-09 a 2026-10-06)
+## Resultados (test completo: 4,098 partidos, 2023-01-02 a 2026-10-06)
 
-Todos los modelos se evalúan sobre **los mismos partidos**: el 30% final del
-test set, que ni la calibración isotónica ni el meta-learner del stacking usaron
-para ajustarse. Datos de `martj42/international_results` hasta el 2026-10-06.
+Todos los modelos se evalúan sobre **los mismos 4,098 partidos**, que ninguno
+usó para ajustarse: la calibración y el stacking se entrenan con predicciones
+*out-of-fold* de 2019-2022 (ver Metodología). Datos de
+`martj42/international_results` hasta el 2026-10-06.
 
-| Modelo | Accuracy | Log-loss | Brier | RPS |
+| Modelo | Accuracy (IC 95%) | Log-loss | Brier | RPS (IC 95%) |
 |---|---|---|---|---|
-| Naive (frecuencia histórica) | 47.9% | 1.048 | 0.632 | 0.230 |
-| Dixon-Coles | 55.3% | 0.945 | 0.561 | 0.194 |
-| Red neuronal | 60.6% | 0.870 | 0.509 | 0.170 |
-| XGBoost | 61.4% | 0.852 | 0.500 | 0.167 |
-| Promedio simple (calibrado) | 61.3% | 0.884 | 0.519 | 0.176 |
-| Stacking (meta-learner) | 60.7% | 0.854 | 0.500 | 0.166 |
+| Naive (frecuencias del train) | 47.2% [45.7, 48.7] | 1.053 | 0.635 | 0.230 [0.227, 0.233] |
+| Dixon-Coles | 56.0% [54.4, 57.4] | 0.938 | 0.555 | 0.191 [0.187, 0.196] |
+| Red neuronal | 59.6% [58.1, 61.1] | 0.872 | 0.513 | 0.171 [0.166, 0.176] |
+| XGBoost | 60.4% [58.8, 61.8] | 0.864 | 0.507 | 0.169 [0.165, 0.174] |
+| Promedio simple (calibrado) | 60.1% [58.5, 61.6] | 0.872 | 0.513 | 0.171 [0.167, 0.176] |
+| Stacking (meta-learner) | 60.5% [59.0, 62.0] | 0.868 | 0.509 | 0.169 [0.164, 0.174] |
 
-**Lectura:** XGBoost, red neuronal, promedio y stacking quedan **empatados
-estadísticamente** (bootstrap pareado, 5,000 remuestreos: ninguna diferencia
-entre ellos es significativa al 95%). Todos superan con claridad a Dixon-Coles
-y al naive. El stacking tiene el mejor RPS (0.166), pero no mejora el accuracy
-de XGBoost solo.
+**Lectura:** stacking y XGBoost quedan **empatados** (diferencia 0.1 puntos,
+IC 95% de la diferencia [-0.4, +0.6]; bootstrap pareado, 5,000 remuestreos).
+El stacking sí supera a la red neuronal (+0.9 puntos, significativo) y todos
+superan con claridad a Dixon-Coles y al naive. En otras palabras: combinar
+modelos no le agrega precisión a XGBoost solo; la API sirve el stacking, que
+rinde igual y además devuelve las probabilidades de cada modelo base.
 
-En **Copa del Mundo 2026** (104 partidos, el torneo completo): stacking y red
-neuronal 65.4%, XGBoost 64.4%, promedio 63.5%, Dixon-Coles 52.9%. El stacking
-tiene el mejor RPS (0.157) y supera de forma significativa solo a Dixon-Coles;
-contra los demás la diferencia no es concluyente con 104 partidos.
+En **Copa del Mundo 2026** (104 partidos): stacking 67.3% (RPS 0.157), red
+neuronal y XGBoost 65.4%, promedio 63.5%, Dixon-Coles 51.9%. El stacking supera
+de forma significativa solo a Dixon-Coles; contra los demás la diferencia no es
+concluyente con 104 partidos.
 
-Calibración ("gana local", 10 bins, holdout común): la red neuronal es la mejor
-calibrada (brecha promedio 0.019), seguida de XGBoost (0.028) y el stacking
-(0.030) — ver `scripts/09e_calibration_diagnostics.R`.
+**Empates:** el 22.8% de los partidos del test terminó en empate, pero el
+stacking elige "empate" solo en el 2.7% (y XGBoost en el 0.3%). No es un error
+de calibración: la probabilidad media de empate que asignan (~22%) coincide con
+la frecuencia real. Es que un empate casi nunca es el resultado *más* probable
+de un partido. Detalle, matriz de confusión y accuracy por tipo de partido
+(amistoso, eliminatoria, torneo, Mundial; local o neutral) en
+`scripts/09f_draws_and_segments.R`.
 
-> Versiones anteriores de este README reportaban stacking 62.0% contra 60.0% de
-> XGBoost. Esa comparación usaba muestras distintas (el stacking en el 30% final,
-> el resto en todo el test) y no era válida; el detalle está en la
-> [bitácora](docs/BITACORA_DECISIONES.md#5-el-stacking-no-era-el-mejor-comparaba-muestras-distintas).
+Calibración ("gana local", 10 bins): todos los modelos quedan entre 0.018 y
+0.026 de brecha promedio; la red neuronal es la mejor calibrada (0.018) — ver
+`scripts/09e_calibration_diagnostics.R`.
+
+El modelo **bayesiano** (`06`) se reporta aparte porque cubre solo 414 partidos
+(oct-2025 a dic-2025): 59.4% de accuracy, sin diferencia significativa con los
+demás en esa ventana. Converge (Rhat máximo 1.003 en 467 parámetros).
+
+> Las cifras pueden moverse unas décimas según la plataforma y la versión de
+> los paquetes; `renv.lock` fija las versiones. Versiones anteriores de este
+> README reportaban otras cifras: ver la
+> [bitácora](docs/BITACORA_DECISIONES.md) (§5 y §6) para saber por qué cambiaron.
 
 ## Estructura del repo
 
@@ -61,27 +75,31 @@ calibrada (brecha promedio 0.019), seguida de XGBoost (0.028) y el stacking
 │   ├── results.csv            # dataset fuente (martj42/international_results, 1872-2026)
 │   └── team_name_map.csv      # unificación de nombres históricos de selecciones
 ├── scripts/
+│   ├── 00_config.R            # parámetros compartidos (fechas de corte, features, modelos del ensamble)
 │   ├── 01_data_prep.R         # limpieza, target 1X2, peso de importancia, unificación de nombres
 │   ├── 02_elo_ratings.R       # rating Elo dinámico pre-partido
 │   ├── 03_dixon_coles.R       # Dixon-Coles walk-forward, gradiente analítico
 │   ├── 04_feature_engineering.R
-│   ├── 05_model_xgboost.R
-│   ├── 06_model_bayesian_mcmc.R  # Stan/brms, partial pooling jerárquico
+│   ├── 05_model_xgboost.R     # tuning walk-forward + predicciones out-of-fold 2019-2022
+│   ├── 06_model_bayesian_mcmc.R  # Stan/brms, partial pooling jerárquico (opcional, fuera del ensamble)
 │   ├── 07_model_deep_learning.R
-│   ├── 08_ensemble.R          # stacking (glmnet) + calibración isotónica
-│   ├── 09_evaluation.R
+│   ├── 08_ensemble.R          # calibración isotónica + stacking (glmnet), ajustados en 2019-2022
+│   ├── 09_evaluation.R        # métricas + IC 95% (bootstrap)
 │   ├── 09b_evaluation_worldcup.R  # accuracy específica en partidos de Mundial
 │   ├── 09c_significance_test.R    # bootstrap, significancia (Mundial)
 │   ├── 09d_significance_full.R    # bootstrap, significancia (test completo)
 │   ├── 09e_calibration_diagnostics.R
-│   └── 10_build_team_state.R  # snapshot diario para servir la API
+│   ├── 09f_draws_and_segments.R   # empates, matriz de confusión, accuracy por tipo de partido
+│   └── 10_build_team_state.R  # snapshot para la API y Dashboard/team_state.json
 ├── api/
 │   ├── plumber.R              # API REST (endpoints /health, /predict)
 │   ├── predict_match.R        # lógica de predicción en vivo
 │   └── Dockerfile             # para desplegar la API
 ├── Dashboard/
-│   └── andre_mundial2026.html # dashboard de un solo archivo (sin build step)
+│   ├── andre_mundial2026.html # dashboard de un solo archivo (sin build step)
+│   └── team_state.json        # Elo y Dixon-Coles por selección (lo actualiza una Action semanal)
 ├── pipeline.R                 # corre todos los scripts en orden
+├── renv.lock                  # versiones exactas de los paquetes
 └── docs/
     ├── BITACORA_DECISIONES.md # bugs encontrados, fixes y decisiones metodológicas
     └── API.md                 # cómo levantar, conectar y desplegar la API
@@ -104,10 +122,16 @@ tiene sentido versionarlos.
 3. **Regularización** (ridge en Dixon-Coles, partial pooling jerárquico en
    el modelo bayesiano) para que selecciones con pocos partidos no generen
    goles esperados absurdos.
-4. **Split temporal, nunca aleatorio.** Todo el test set es posterior a
-   todo el train set.
-5. **Calibración isotónica** por modelo antes de promediar/stackear, y
-   **stacking vía meta-learner (glmnet)** en vez de promedio simple.
+4. **Split temporal, nunca aleatorio.** Todo el test set (2023+) es posterior
+   a todo el train set. Los hiperparámetros de XGBoost también se eligen con
+   validación temporal: para cada año de 2019 a 2022, se entrena con todo lo
+   anterior y se mide en ese año (no con k-fold aleatorio, que mezclaría
+   partidos futuros en el entrenamiento).
+5. **Predicciones out-of-fold para el ensamble.** Esos mismos cortes anuales
+   dan predicciones de 2019-2022 que ningún modelo vio al entrenarse; con ellas
+   se ajustan la **calibración isotónica** de cada modelo y el **stacking**
+   (meta-learner glmnet). Así el test completo queda libre para evaluar a todos
+   por igual.
 6. **Ventaja de local NO se anula en cancha neutral durante el entrenamiento**
    (decisión deliberada, no un descuido — ver [`docs/BITACORA_DECISIONES.md`](docs/BITACORA_DECISIONES.md)):
    probamos anularla y el accuracy empeoró, porque incluso en partidos
@@ -119,20 +143,32 @@ tiene sentido versionarlos.
 
 ## Cómo correr esto
 
+1. Instala R (4.5 o superior) y, solo si quieres el modelo bayesiano, el
+   compilador de C++: en Windows es **Rtools** de la misma versión menor que tu
+   R (R 4.5 y 4.6 usan Rtools45).
+2. Abre `Modelo predictivo mundiales.Rproj` (así el directorio de trabajo es la
+   raíz del repo; los scripts usan rutas relativas).
+3. Instala las versiones exactas con las que se verificó el proyecto:
+
 ```r
-install.packages(c("dplyr","data.table","lubridate","glmnet","nnet","xgboost",
-                    "rstan","brms","plumber","jsonlite"))
+install.packages("renv")
+renv::restore()
 ```
 
-`rstan`/`brms` necesitan un compilador de C++ instalado (Rtools en Windows).
-El modelo bayesiano (`06_model_bayesian_mcmc.R`) es opcional — el resto del
-pipeline corre sin él, simplemente no se suma al ensamble.
+   (Sin `renv`: `install.packages(c("dplyr","data.table","lubridate","glmnet","nnet",
+   "xgboost","jsonlite","plumber"))`, y `"brms","rstan"` para el bayesiano.)
+4. Corre todo:
 
 ```r
 source("pipeline.R")
 ```
 
-Esto corre los 14 scripts en orden y deja todo listo en `data/` y `output/`.
+Corre los 15 scripts en orden, cada uno en un entorno limpio, y deja todo en
+`data/` y `output/`. El modelo bayesiano (`06`) es opcional: se salta solo si
+faltan `brms`/`rstan` o el compilador, o si defines `ANDRE_SKIP_BAYES=1`.
+
+Cada push corre el pipeline completo en GitHub Actions (sin el bayesiano) y
+falla si algún modelo no supera al baseline o si la API no responde.
 
 ## API en vivo
 
@@ -162,6 +198,8 @@ navegador, no necesita servidor ni build step. Incluye:
 - Cálculo de %EDGE y cuota justa por mercado (1X2, over/under 2.5, ambos anotan)
 - Mapa de calor de marcadores probables, backtest real, calibración
 - Vista previa móvil real (iframe con viewport propio)
+- Elo y goles esperados Dixon-Coles del modelo (`team_state.json`, que una
+  GitHub Action actualiza cada lunes con los resultados nuevos)
 - Conexión opcional a la API en vivo (arriba) para usar los modelos
   entrenados reales en vez de la heurística Elo→Poisson
 

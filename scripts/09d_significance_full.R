@@ -1,8 +1,7 @@
 ## =============================================================
 ## 09d_significance_full.R
-## Lo mismo que 09c pero sobre el holdout común de todos los torneos
-## (el 30% final del test set desde 2023), no solo los partidos de
-## Mundial. Con muchos más partidos, el bootstrap tiene más poder para
+## Lo mismo que 09c pero sobre el test completo de todos los torneos
+## (desde 2023), no solo los partidos de Mundial. Con muchos más partidos, el bootstrap tiene más poder para
 ## detectar diferencias reales entre modelos -- y compara TODOS los
 ## pares, no solo contra el stacking.
 ## =============================================================
@@ -12,15 +11,13 @@ set.seed(42)
 DATA_DIR <- "data"
 ens <- fread(file.path(DATA_DIR, "ensemble_predictions.csv"))
 
-## Mismo holdout que 09_evaluation.R: el stacking y la calibración se
-## ajustan sobre el primer 70% del test, así que solo el 30% final es
-## fuera de muestra para todos los modelos.
-if ("stack_split" %in% names(ens)) ens <- ens[stack_split == "meta_test"]
+## Todos los modelos sobre el test completo (2023+): ninguno lo usó para
+## ajustarse (ver 08_ensemble.R).
 
 modelos_disponibles <- unique(gsub("_p_(home|draw|away)$", "",
                           grep("_p_home$", names(ens), value = TRUE)))
 cat("Modelos encontrados:", paste(modelos_disponibles, collapse=", "), "\n")
-cat("Partidos en el holdout común:", nrow(ens), "\n\n")
+cat("Partidos en el test completo:", nrow(ens), "\n\n")
 
 accuracy_of <- function(dat, prefix) {
   pa <- dat[[paste0(prefix,"_p_away")]]; pd <- dat[[paste0(prefix,"_p_draw")]]; ph <- dat[[paste0(prefix,"_p_home")]]
@@ -43,7 +40,7 @@ for (b in seq_len(N_BOOT)) {
   for (m in modelos_disponibles) boot_acc[b, m] <- accuracy_of(boot_sample, m)
 }
 
-cat("\n=== Intervalo de confianza 95% del accuracy (holdout común, n=", N_BOOT, " remuestreos) ===\n", sep="")
+cat("\n=== Intervalo de confianza 95% del accuracy (test completo, n=", N_BOOT, " remuestreos) ===\n", sep="")
 ci_table <- rbindlist(lapply(modelos_disponibles, function(m) {
   ci <- quantile(boot_acc[, m], c(0.025, 0.5, 0.975), na.rm = TRUE)
   data.table(modelo = m, accuracy_observado = round(accuracy_of(ens, m), 4),
