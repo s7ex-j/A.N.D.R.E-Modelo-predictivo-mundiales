@@ -318,9 +318,9 @@
       </div>
     </div>
     <div class="headline-stats">
-      <div class="hstat"><div class="v" style="color:var(--green)">62.0%</div><div class="l">Accuracy stack (holdout)</div></div>
-      <div class="hstat"><div class="v">0.160</div><div class="l">RPS stack</div></div>
-      <div class="hstat"><div class="v">1,106</div><div class="l">Partidos out-of-sample</div></div>
+      <div class="hstat"><div class="v" style="color:var(--green)">60.7%</div><div class="l">Accuracy stack (holdout)</div></div>
+      <div class="hstat"><div class="v">0.166</div><div class="l">RPS stack</div></div>
+      <div class="hstat"><div class="v">1,230</div><div class="l">Partidos out-of-sample</div></div>
       <div class="device-toggle">
         <button class="device-btn active" id="btnMobile" title="Vista m&oacute;vil">&#128241; Ver en m&oacute;vil</button>
       </div>
@@ -564,14 +564,14 @@
     <div class="panel">
       <p class="panel-title">Backtest del ensamble (2023&ndash;2026, walk-forward)</p>
       <div class="backtest-grid">
-        <div class="bt-cell"><div class="m">Naive</div><div class="a">47.3%</div><div class="n">RPS .229</div></div>
-        <div class="bt-cell"><div class="m">Dixon-C.</div><div class="a">56.3%</div><div class="n">RPS .190</div></div>
-        <div class="bt-cell"><div class="m">Red neur.</div><div class="a">59.3%</div><div class="n">RPS .170</div></div>
-        <div class="bt-cell"><div class="m">XGBoost</div><div class="a">60.0%</div><div class="n">RPS .168</div></div>
-        <div class="bt-cell"><div class="m">Promedio</div><div class="a">60.0%</div><div class="n">RPS .175</div></div>
-        <div class="bt-cell hi"><div class="m">Stacking</div><div class="a hi">62.0%</div><div class="n">RPS .160</div></div>
+        <div class="bt-cell"><div class="m">Naive</div><div class="a">47.9%</div><div class="n">RPS .230</div></div>
+        <div class="bt-cell"><div class="m">Dixon-C.</div><div class="a">55.3%</div><div class="n">RPS .194</div></div>
+        <div class="bt-cell"><div class="m">Red neur.</div><div class="a">60.6%</div><div class="n">RPS .170</div></div>
+        <div class="bt-cell"><div class="m">XGBoost</div><div class="a">61.4%</div><div class="n">RPS .167</div></div>
+        <div class="bt-cell"><div class="m">Promedio</div><div class="a">61.3%</div><div class="n">RPS .176</div></div>
+        <div class="bt-cell hi"><div class="m">Stacking (en uso)</div><div class="a hi">60.7%</div><div class="n">RPS .166</div></div>
       </div>
-      <div class="note">Métricas reales de <span style="color:var(--muted)">09_evaluation.R</span>. Stacking medido en el 30% final del test (holdout real), n=1,106. Bootstrap (5,000 remuestreos): stacking le gana al promedio simple de forma <b style="color:var(--green)">estad&iacute;sticamente significativa</b>; contra XGBoost/red neuronal solos, todav&iacute;a no es concluyente con esta cantidad de partidos.</div>
+      <div class="note">Métricas reales de <span style="color:var(--muted)">09_evaluation.R</span> sobre el holdout común (n=1,230, sep-2025 a oct-2026): todos los modelos evaluados en los mismos partidos, que ninguno usó para ajustarse. Bootstrap (5,000 remuestreos): XGBoost, red neuronal, promedio y stacking quedan <b style="color:var(--green)">estad&iacute;sticamente empatados</b>; todos superan a Dixon-Coles.</div>
     </div>
 
     <div class="panel">
@@ -583,21 +583,21 @@
       <p class="panel-title">Backtest del ensamble &mdash; accuracy real</p>
       <div class="chart-box"><canvas id="chartAccuracy"></canvas></div>
       <div class="legend" style="margin-top:10px;">
-        <div class="legend-item"><div class="dot" style="background:#5b8def"></div>Todos los torneos (n=3,686)</div>
-        <div class="legend-item"><div class="dot" style="background:#3ecf8e"></div>Solo Mundial 2026 (n=88)</div>
+        <div class="legend-item"><div class="dot" style="background:#5b8def"></div>Holdout com&uacute;n, todos los torneos (n=1,230)</div>
+        <div class="legend-item"><div class="dot" style="background:#3ecf8e"></div>Solo Mundial 2026 (n=104)</div>
       </div>
-      <div class="note">Datos reales de <span style="color:var(--muted)">09_evaluation.R</span> y <span style="color:var(--muted)">09b_evaluation_worldcup.R</span> sobre el dataset completo (1872&ndash;2026, 49,493 partidos) con XGBoost y bayesiano incluidos.</div>
+      <div class="note">Datos reales de <span style="color:var(--muted)">09_evaluation.R</span> y <span style="color:var(--muted)">09b_evaluation_worldcup.R</span> sobre el dataset completo (1872&ndash;2026, 49,940 partidos) con XGBoost y bayesiano incluidos.</div>
     </div>
 
     <div class="panel">
       <p class="panel-title">Calibraci&oacute;n del stacking</p>
       <div class="chart-box"><canvas id="chartCalibration"></canvas></div>
-      <div class="note">Agrupa partidos por probabilidad predicha de "gana local" (10 grupos, test completo) vs. frecuencia real. L&iacute;nea punteada = calibraci&oacute;n perfecta. Stacking es el <b style="color:var(--green)">mejor calibrado</b> de los 5 modelos (brecha 0.022 vs. 0.086 del promedio simple) &mdash; por eso el %EDGE es confiable.</div>
+      <div class="note">Agrupa partidos por probabilidad predicha de "gana local" (10 grupos, holdout com&uacute;n) vs. frecuencia real. L&iacute;nea punteada = calibraci&oacute;n perfecta. Brecha promedio del stacking: <b style="color:var(--green)">0.030</b> (red neuronal 0.019, promedio simple 0.071). Una brecha baja significa que un 60% predicho se cumple cerca del 60% de las veces.</div>
     </div>
   </div>
 
   <div class="footnote">
-    <b>Metodología:</b> Elo (ventaja local +60, K din&aacute;mico por importancia, estilo eloratings.net) &rarr; Dixon-Coles Poisson bivariado con decaimiento temporal y refit trimestral walk-forward &rarr; features de forma reciente, descanso y head-to-head &rarr; XGBoost (clasificaci&oacute;n 1X2 + regresi&oacute;n Poisson de goles) + red neuronal + bayesiano jer&aacute;rquico MCMC &rarr; meta-learner (regresi&oacute;n multinomial glmnet) sobre las probabilidades de los modelos base. Todo el pipeline es walk-forward (nunca usa informaci&oacute;n futura). Entrenado y evaluado sobre el dataset internacional de resultados 1872&ndash;2026 (49,501 partidos).<br>
+    <b>Metodología:</b> Elo (ventaja local +60, K din&aacute;mico por importancia, estilo eloratings.net) &rarr; Dixon-Coles Poisson bivariado con decaimiento temporal y refit trimestral walk-forward &rarr; features de forma reciente, descanso y head-to-head &rarr; XGBoost (clasificaci&oacute;n 1X2 + regresi&oacute;n Poisson de goles) + red neuronal + bayesiano jer&aacute;rquico MCMC &rarr; meta-learner (regresi&oacute;n multinomial glmnet) sobre las probabilidades de los modelos base. Todo el pipeline es walk-forward (nunca usa informaci&oacute;n futura). Entrenado y evaluado sobre el dataset internacional de resultados 1872&ndash;2026 (49,940 partidos).<br>
     El bracket (cuartos, semis, final) refleja la estructura real del Mundial 2026 conocida al 6&ndash;7 de julio de 2026: octavos de Marruecos, Francia, Noruega e Inglaterra ya definidos; Espa&ntilde;a/Portugal, B&eacute;lgica/USA, Egipto/Argentina y Suiza/Colombia todav&iacute;a por resolverse. Los cruces "por definir" son escenarios hipot&eacute;ticos v&aacute;lidos seg&uacute;n el bracket, no predicciones de qui&eacute;n avanzar&aacute;.<br>
     Esta herramienta es un simulador informativo para explorar tu propio modelo frente a cuotas de mercado. No es asesor&iacute;a financiera ni garant&iacute;a de resultados; el f&uacute;tbol tiene varianza alta incluso con buena calibraci&oacute;n. Apostar conlleva riesgo real de p&eacute;rdida.
     <div class="credit">
@@ -1125,13 +1125,13 @@ try {
       labels: ['Naive','Dixon-Coles','Red neuronal','XGBoost','Promedio','Stacking'],
       datasets: [
         {
-          label: 'Todos los torneos',
-          data: [47.31, 56.32, 59.25, 60.01, 60.01, 62.03],
+          label: 'Holdout común',
+          data: [47.89, 55.28, 60.57, 61.38, 61.30, 60.73],
           backgroundColor: CHART_COLORS.blue, borderRadius: 3, barPercentage: 0.65
         },
         {
           label: 'Solo Mundial 2026',
-          data: [null, 52.27, 59.09, 61.36, 54.55, 62.50],
+          data: [null, 52.88, 65.38, 64.42, 63.46, 65.38],
           backgroundColor: CHART_COLORS.green, borderRadius: 3, barPercentage: 0.65
         }
       ]
@@ -1151,17 +1151,17 @@ try {
   new Chart(document.getElementById('chartCalibration'), {
     type: 'line',
     data: {
-      labels: ['8.5','17.4','27.4','33.3','39.7','49.6','59.8','68.1','76.5','86.4'],
+      labels: ['9.3','19.1','27.1','33.9','42.0','49.7','58.6','68.9','79.0','87.6'],
       datasets: [
         {
           label: 'Stacking (real)',
-          data: [6.2,14.4,31.8,36.0,40.2,49.1,61.4,66.1,78.5,89.4],
+          data: [7.3,17.9,24.4,39.0,43.1,52.0,60.2,65.0,75.6,94.3],
           borderColor: CHART_COLORS.green, backgroundColor: CHART_COLORS.green,
           tension: 0.25, pointRadius: 3
         },
         {
           label: 'Calibración perfecta',
-          data: [8.5,17.4,27.4,33.3,39.7,49.6,59.8,68.1,76.5,86.4],
+          data: [9.3,19.1,27.1,33.9,42.0,49.7,58.6,68.9,79.0,87.6],
           borderColor: CHART_COLORS.muted, borderDash: [4,4], pointRadius: 0, tension: 0
         }
       ]
